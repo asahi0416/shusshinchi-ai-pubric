@@ -290,6 +290,76 @@ st.markdown("""
         box-shadow: 0 6px 18px rgba(255, 117, 140, 0.25) !important;
     }
 
+    /* ── スマートフォン・モバイル向け完全レスポンシブ最適化 ── */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: 1rem !important;
+            padding-bottom: 2rem !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+        }
+        .hero-container {
+            padding: 18px 14px !important;
+            border-radius: 18px !important;
+            margin-bottom: 14px !important;
+        }
+        .hero-title {
+            font-size: 1.55rem !important;
+        }
+        .hero-subtitle {
+            font-size: 0.85rem !important;
+            line-height: 1.55 !important;
+        }
+        /* ラジオボタンをスマホで縦並び＆100%幅にして画面外はみ出し・横スクロールを完全防止 */
+        div[role="radiogroup"] {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            gap: 8px !important;
+            padding: 10px 12px !important;
+            box-sizing: border-box !important;
+        }
+        div[role="radiogroup"] > label {
+            margin-bottom: 0px !important;
+            width: 100% !important;
+        }
+        /* おすすめバナー */
+        .recommend-banner {
+            padding: 12px 14px !important;
+            gap: 10px !important;
+            border-radius: 14px !important;
+            margin-bottom: 16px !important;
+        }
+        .recommend-banner-text {
+            font-size: 0.85rem !important;
+            line-height: 1.45 !important;
+        }
+        .recommend-banner-sub {
+            font-size: 0.76rem !important;
+            line-height: 1.4 !important;
+        }
+        /* 結果発表カード */
+        .result-card-main {
+            padding: 18px 12px !important;
+            border-radius: 18px !important;
+            margin-bottom: 16px !important;
+        }
+        .result-card-pref {
+            font-size: 1.45rem !important;
+        }
+        .result-card-desc {
+            font-size: 0.82rem !important;
+            padding: 10px 12px !important;
+        }
+        /* ランキングカード */
+        .rank-item {
+            padding: 10px 12px !important;
+        }
+        .rank-item > div:first-child span {
+            font-size: 0.95rem !important;
+        }
+    }
+
     /* ── ラジオボタン ── */
     div[role="radiogroup"] {
         background: rgba(255, 255, 255, 0.7);
