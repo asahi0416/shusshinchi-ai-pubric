@@ -244,6 +244,113 @@ with st.sidebar:
     アップロードされた顔画像および診断結果は、AIの精度向上・学術分析目的でのみ安全に暗号化通信により管理・蓄積されます。第三者への開示・商用目的での利用は行われません。
     """)
 
+
+# ----------------- 全画面ドラッグ＆ドロップ (Global Drag & Drop) -----------------
+import streamlit.components.v1 as components
+components.html("""
+<script>
+(function() {
+  const pDoc = window.parent.document;
+  const pWin = window.parent;
+  if (!pDoc || pDoc.__global_drop_ready) return;
+  pDoc.__global_drop_ready = true;
+
+  // 画面全体のドロップ案内オーバーレイ
+  let overlay = pDoc.getElementById('global-drag-overlay');
+  if (!overlay) {
+    overlay = pDoc.createElement('div');
+    overlay.id = 'global-drag-overlay';
+    overlay.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999999;
+      background: rgba(30, 58, 138, 0.88); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      pointer-events: none; transition: opacity 0.2s ease; opacity: 0;
+    `;
+    overlay.innerHTML = `
+      <div style="text-align: center; border: 3px dashed rgba(255,255,255,0.9); border-radius: 24px; padding: 40px 60px; background: rgba(255,255,255,0.12); box-shadow: 0 20px 50px rgba(0,0,0,0.4);">
+        <div style="font-size: 4.5rem; margin-bottom: 12px; line-height: 1;">📸</div>
+        <div style="font-size: 1.7rem; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.04em;">画面のどこでもドロップOK！</div>
+        <div style="font-size: 1.05rem; opacity: 0.95;">写真を離すと自動で出身地・ルーツ診断を開始します</div>
+      </div>
+    `;
+    pDoc.body.appendChild(overlay);
+  }
+
+  let dragCounter = 0;
+
+  pWin.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    dragCounter++;
+    if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+      overlay.style.display = 'flex';
+      requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+    }
+  });
+
+  pWin.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  });
+
+  pWin.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      overlay.style.opacity = '0';
+      setTimeout(() => { if (dragCounter === 0) overlay.style.display = 'none'; }, 200);
+    }
+  });
+
+  pWin.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 200);
+
+    const files = e.dataTransfer ? e.dataTransfer.files : null;
+    if (!files || files.length === 0) return;
+
+    // Streamlit 内の file input を取得
+    const fileInputs = pDoc.querySelectorAll('input[type="file"]');
+    if (!fileInputs || fileInputs.length === 0) return;
+
+    // 表示中の input[type="file"] を優先取得
+    let targetInput = null;
+    for (const inp of fileInputs) {
+      if (inp.offsetParent !== null) {
+        targetInput = inp;
+        break;
+      }
+    }
+    if (!targetInput) targetInput = fileInputs[0];
+
+    try {
+      const dt = new DataTransfer();
+      for (let i = 0; i < files.length; i++) {
+        dt.items.add(files[i]);
+      }
+      
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'files');
+      if (descriptor && descriptor.set) {
+        descriptor.set.call(targetInput, dt.files);
+      } else {
+        targetInput.files = dt.files;
+      }
+
+      targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+      targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (err) {
+      console.error('Global drag & drop error:', err);
+    }
+  });
+})();
+</script>
+""", height=0, width=0)
+
 # ----------------- メイン画面ヘッダー -----------------
 st.markdown("""
 <div class="hero-container">
