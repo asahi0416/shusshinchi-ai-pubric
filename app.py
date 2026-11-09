@@ -49,165 +49,233 @@ if query_params.get("page") == "admin" or query_params.get("admin") in ["1", "tr
 # カスタムCSS（洗練されたモダン＆和風テイスト）
 st.markdown("""
 <style>
-    /* Streamlit標準UI要素（Deployボタン・ハンバーガーメニュー・フッター・ヘッダーバー）の完全消去 */
-    header[data-testid="stHeader"] {
+    /* Streamlit標準UI要素の完全消去 */
+    header[data-testid="stHeader"], footer, #MainMenu, .stDeployButton, [data-testid="stDeployButton"], [data-testid="stToolbar"], [data-testid="stToolbarActions"], [data-testid="stStatusWidget"], [data-testid="stDecoration"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
     }
-    #MainMenu {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    footer {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    .stDeployButton, [data-testid="stDeployButton"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    [data-testid="stToolbar"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    [data-testid="stToolbarActions"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    [data-testid="stStatusWidget"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    [data-testid="stDecoration"] {
-        display: none !important;
-    }
-    .block-container {
-        padding-top: 1.8rem !important;
-        padding-bottom: 3rem !important;
-    }
-    /* 全体フォント・レイアウト */
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap');
-    html, body, [class*="css"] {
-        font-family: 'Noto Sans JP', sans-serif;
+
+    /* Google Fonts: Zen Maru Gothic (丸みのある可愛いフォント) */
+    @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+    /* 全体背景: ふんわり桜色＆ミルキーパステル */
+    html, body, [class*="css"], .stApp {
+        font-family: 'Zen Maru Gothic', sans-serif !important;
+        background: linear-gradient(135deg, #FFF7F9 0%, #F8FAFC 50%, #FFF9F5 100%) !important;
+        color: #1E293B;
     }
 
-    /* ヘッダーバナー */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3.5rem !important;
+        max-width: 1060px !important;
+    }
+
+    /* ── 可愛いトップヘッダー ── */
     .hero-container {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #1E3A8A 100%);
-        border-radius: 16px;
-        padding: 32px 36px;
-        color: #FFFFFF;
-        margin-bottom: 24px;
-        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+        background: linear-gradient(135deg, #FFFFFF 0%, #FFF5F7 60%, #FFF8F0 100%);
+        border: 2px solid #FFE4E9;
+        border-radius: 24px;
+        padding: 32px 30px;
+        text-align: center;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(255, 117, 140, 0.12);
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-container::before {
+        content: '✨';
+        position: absolute; top: 12px; left: 20px; font-size: 1.5rem; opacity: 0.6;
+    }
+    .hero-container::after {
+        content: '🌸';
+        position: absolute; bottom: 12px; right: 20px; font-size: 1.5rem; opacity: 0.6;
     }
     .hero-badge {
         display: inline-block;
-        background: rgba(59, 130, 246, 0.25);
-        border: 1px solid rgba(147, 197, 253, 0.4);
-        padding: 4px 12px;
-        border-radius: 9999px;
-        font-size: 0.85rem;
-        font-weight: 600;
+        background: linear-gradient(135deg, #FF7EB3 0%, #FF758C 100%);
+        color: #FFFFFF;
+        padding: 5px 16px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
         letter-spacing: 0.05em;
-        color: #93C5FD;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(255, 117, 140, 0.3);
     }
     .hero-title {
-        font-size: 2.2rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
+        font-size: clamp(1.8rem, 4.5vw, 2.4rem);
+        font-weight: 900;
         margin: 0 0 10px 0;
-        background: linear-gradient(to right, #FFFFFF, #E2E8F0);
+        background: linear-gradient(90deg, #FF6584, #FF7EB3, #FF9A76);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.01em;
     }
     .hero-subtitle {
-        font-size: 1.05rem;
-        color: #CBD5E1;
-        line-height: 1.6;
-        margin: 0;
+        font-size: 0.98rem;
+        color: #475569;
+        line-height: 1.7;
+        font-weight: 500;
+        margin: 0 auto;
+        max-width: 520px;
     }
 
-    /* 結果カード */
-    .result-card-main {
-        background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-        padding: 22px 24px;
-        border-radius: 14px;
-        border-left: 6px solid #2563EB;
-        margin-bottom: 18px;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+    /* ── 卒アル・おすすめバナー ── */
+    .recommend-banner {
+        background: linear-gradient(135deg, #FFF0F5 0%, #FFF9EB 100%);
+        border: 2px dashed #FFCCD5;
+        border-radius: 18px;
+        padding: 14px 20px;
+        margin: 8px 0 22px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 4px 14px rgba(255, 154, 118, 0.08);
     }
-    .result-card-title {
-        font-size: 0.85rem;
+    .recommend-banner-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .recommend-banner-text {
+        font-size: 0.92rem;
+        color: #9D174D;
+        line-height: 1.55;
         font-weight: 700;
-        color: #1E40AF;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
     }
-    .result-card-region {
-        font-size: 1.85rem;
-        font-weight: 800;
-        color: #1E3A8A;
-        margin: 6px 0 10px 0;
+    .recommend-banner-sub {
+        font-size: 0.82rem;
+        color: #B45309;
+        font-weight: 500;
+    }
+
+    /* ── 結果発表カード (超可愛いピンクゴールド) ── */
+    .result-card-main {
+        background: linear-gradient(135deg, #FFFFFF 0%, #FFF5F7 60%, #FFF9F3 100%);
+        border: 2.5px solid #FFB6C1;
+        border-radius: 22px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(255, 117, 140, 0.16);
+        position: relative;
+        text-align: center;
+    }
+    .result-card-badge {
+        display: inline-block;
+        background: #FFF0F3;
+        color: #E11D48;
+        border: 1px solid #FECDD3;
+        padding: 4px 14px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-bottom: 8px;
     }
     .result-card-pref {
-        font-size: 1.15rem;
+        font-size: clamp(1.4rem, 3.5vw, 1.85rem);
+        font-weight: 900;
+        color: #1E293B;
+        margin: 6px 0 10px 0;
+    }
+    .pref-highlight {
+        color: #E11D48;
+        background: linear-gradient(transparent 65%, #FFE4E6 65%);
+        padding: 0 4px;
+    }
+    .result-card-region {
+        font-size: 1.05rem;
         font-weight: 700;
-        color: #1D4ED8;
-        margin-bottom: 10px;
+        color: #475569;
+        margin-bottom: 12px;
     }
     .result-card-desc {
-        font-size: 0.94rem;
-        color: #334155;
+        font-size: 0.88rem;
+        color: #64748B;
         line-height: 1.6;
-        background: rgba(255, 255, 255, 0.6);
-        padding: 10px 14px;
-        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #FFE4E9;
+        padding: 12px 16px;
+        border-radius: 14px;
+        text-align: left;
     }
 
-    /* ランキングアイテム */
+    /* ── 可愛いハッシュタグ ── */
+    .tag-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        justify-content: center;
+    }
+    .tag-pill {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #FFB6C1;
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #E11D48;
+        box-shadow: 0 2px 6px rgba(255, 117, 140, 0.1);
+    }
+
+    /* ── ランキングカード ── */
     .rank-item {
         background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        padding: 10px 16px;
-        border-radius: 10px;
-        margin-bottom: 8px;
+        border: 1.5px solid #F1F5F9;
+        padding: 12px 18px;
+        border-radius: 14px;
+        margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: all 0.2s ease;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
     .rank-item:hover {
-        border-color: #93C5FD;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(255, 117, 140, 0.12);
+        border-color: #FFCCD5;
     }
     .rank-item-1 {
-        background: linear-gradient(90deg, #FEF3C7 0%, #FFFFFF 100%);
-        border: 1px solid #FCD34D;
+        background: linear-gradient(135deg, #FFF1F2 0%, #FFFFFF 100%);
+        border: 2px solid #FDA4AF;
     }
     .rank-item-2 {
-        background: linear-gradient(90deg, #F1F5F9 0%, #FFFFFF 100%);
-        border: 1px solid #CBD5E1;
+        background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+        border: 2px solid #E2E8F0;
     }
     .rank-item-3 {
-        background: linear-gradient(90deg, #FFEDD5 0%, #FFFFFF 100%);
-        border: 1px solid #FDBA74;
+        background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%);
+        border: 2px solid #FDBA74;
     }
 
-    /* SNSシェアボックス */
-    .share-container {
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 18px 20px;
-        margin-top: 20px;
-    }
-
-    /* プログレスバーグラデーション */
+    /* ── プログレスバー (ピンク〜オレンジのグラデーション) ── */
     .stProgress > div > div > div > div {
-        background-image: linear-gradient(to right, #3B82F6, #8B5CF6);
+        background-image: linear-gradient(to right, #FF7EB3, #FFA07A) !important;
+        border-radius: 999px !important;
     }
+
+    /* ── ボタン類のぷっくり角丸化 ── */
+    .stButton > button {
+        border-radius: 999px !important;
+        font-family: 'Zen Maru Gothic', sans-serif !important;
+        font-weight: 700 !important;
+        border: none !important;
+        transition: all 0.2s ease !important;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 18px rgba(255, 117, 140, 0.25) !important;
+    }
+
+    /* ── ラジオボタン ── */
+    div[role="radiogroup"] {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid #FFE4E9;
+        border-radius: 16px;
+        padding: 8px 12px;
+        display: inline-flex;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -262,16 +330,16 @@ components.html("""
     overlay.id = 'global-drag-overlay';
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999999;
-      background: rgba(30, 58, 138, 0.88); backdrop-filter: blur(6px);
+      background: linear-gradient(135deg, rgba(255, 101, 132, 0.92), rgba(255, 126, 179, 0.92)); backdrop-filter: blur(6px);
       display: none; align-items: center; justify-content: center;
-      color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #ffffff; font-family: 'Zen Maru Gothic', sans-serif;
       pointer-events: none; transition: opacity 0.2s ease; opacity: 0;
     `;
     overlay.innerHTML = `
-      <div style="text-align: center; border: 3px dashed rgba(255,255,255,0.9); border-radius: 24px; padding: 40px 60px; background: rgba(255,255,255,0.12); box-shadow: 0 20px 50px rgba(0,0,0,0.4);">
+      <div style="text-align: center; border: 3px dashed rgba(255,255,255,0.95); border-radius: 28px; padding: 40px 60px; background: rgba(255,255,255,0.18); box-shadow: 0 20px 50px rgba(255, 101, 132, 0.35);">
         <div style="font-size: 4.5rem; margin-bottom: 12px; line-height: 1;">📸</div>
-        <div style="font-size: 1.7rem; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.04em;">画面のどこでもドロップOK！</div>
-        <div style="font-size: 1.05rem; opacity: 0.95;">写真を離すと自動で出身地・ルーツ診断を開始します</div>
+        <div style="font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; letter-spacing: 0.04em;">画面のどこでもドロップしてね🤍</div>
+        <div style="font-size: 1.05rem; opacity: 0.95; font-weight: 700;">指をはなすと自動で診断スタート！✨</div>
       </div>
     `;
     pDoc.body.appendChild(overlay);
@@ -354,33 +422,32 @@ components.html("""
 # ----------------- メイン画面ヘッダー -----------------
 st.markdown("""
 <div class="hero-container">
-    <div class="hero-badge">🧬 3D骨格 ＆ マルチモーダルAI</div>
-    <div class="hero-title">🗾 AI顔画像 出身地＆ルーツ判定</div>
+    <div class="hero-badge">✨ AI顔タイプ診断</div>
+    <div class="hero-title">🗾 AI出身地・ルーツ診断</div>
     <div class="hero-subtitle">
-        あなたの顔貌骨格に眠る、日本列島の地域的特徴をAIが解明。<br>
-        「6地方ブロック」「47都道府県ランキング」「縄文系／弥生系タイプ」を瞬時に診断します。
+        あなたの顔、どこの県っぽい？🤍<br>
+        全国47都道府県でいちばん顔の系統が似てる地域をAIが診断しちゃうよ！✨
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # 診断モード選択
 diag_mode = st.radio(
-    "診断モードを選択してください",
+    "診断モードを選択してね",
     [
-        "👤 個人診断 (1名)",
-        "👥 グループ・集合写真診断 (複数名) ★精度UP"
+        "👤 ひとり写真で診断",
+        "👥 集合写真・みんなで診断 ✨おすすめ"
     ],
     horizontal=True
 )
 
-# 集合写真おすすめバナー（シンプル表示）
+# 集合写真おすすめバナー
 st.markdown("""
-<div style="background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px 18px; margin: 8px 0 20px 0; box-shadow: 0 2px 8px rgba(22, 101, 52, 0.05);">
-    <div style="font-weight: 700; color: #166534; font-size: 0.95rem; line-height: 1.5;">
-        ✨ <b>グループ・集合写真のほうが精度が格段に高くなります！</b><br>
-        <span style="font-size: 0.86rem; color: #15803D; font-weight: 500;">
-            おすすめ：同じ学校の<b>卒業アルバム</b>、クラス写真、部活動などの集合写真（3名以上）
-        </span>
+<div class="recommend-banner">
+    <div class="recommend-banner-icon">📸</div>
+    <div>
+        <div class="recommend-banner-text">✨ 卒アルやクラス写真、部活の集合写真で診断すると精度UP！</div>
+        <div class="recommend-banner-sub">同じ地元・学校の仲間（3人以上）の集合写真だと、さらに正確なルーツがわかっちゃうよ🤍</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -388,7 +455,7 @@ st.markdown("""
 # ----------------------------------------------------
 # A. 個人診断モード (1名)
 # ----------------------------------------------------
-if diag_mode == "👤 個人診断 (1名)":
+if diag_mode == "👤 ひとり写真で診断":
     col1, col2 = st.columns([1, 1], gap="large")
 
     with col1:
@@ -415,9 +482,10 @@ if diag_mode == "👤 個人診断 (1名)":
             st.image(image_input, caption="入力された写真", use_container_width=True)
             
         st.markdown("""
-        <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 10px 14px; margin-top: 14px;">
-            <div style="font-size: 0.85rem; color: #1E40AF; line-height: 1.4;">
-                💡 <b>より高精度に診断したい場合</b>: 卒業アルバムや部活動などの集合写真を使う「グループ診断」がおすすめです！
+        <div style="background: linear-gradient(135deg, #FFF0F5 0%, #FFF8F0 100%); border: 1.5px solid #FFCCD5; border-radius: 14px; padding: 12px 16px; margin-top: 14px;">
+            <div style="font-size: 0.85rem; color: #BE185D; line-height: 1.5; font-weight: 700;">
+                💡 <b>もっと正確に診断したいときは？</b><br>
+                <span style="font-weight: 500; color: #831843;">卒業アルバムや部活の集合写真で診断する「みんなで診断」が超おすすめだよ🤍</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -449,30 +517,38 @@ if diag_mode == "👤 個人診断 (1名)":
                     top_pref = result["top_prefectures"][0]
                     jy = result["jomon_yayoi"]
 
-                    # メイン判定カード
+                    # メイン判定カード (可愛いお祝いカード)
                     st.markdown(f"""
                     <div class="result-card-main">
-                        <div class="result-card-title">AI骨格ルーツ診断結果</div>
-                        <div class="result-card-region">
-                            🗾 推定地域: <span style="color: #2563EB;">【{top_region['region']}】</span> <span style="font-size: 1.15rem; color: #3B82F6;">({top_region['percentage']}%)</span>
-                        </div>
+                        <div class="result-card-badge">🎉 診断結果発表</div>
                         <div class="result-card-pref">
-                            🏆 最有力都道府県: 【{top_pref['prefecture']}】 ({top_pref['percentage']:.2f}%)
+                            あなたの顔は… <span class="pref-highlight">【{top_pref['prefecture']}】</span> っぽい！🥇
+                        </div>
+                        <div class="result-card-region">
+                            🗾 エリア: <b>{top_region['region']}</b> <span style="font-size: 0.95rem; color: #FF6584;">({top_region['percentage']}%)</span>
                         </div>
                         <div class="result-card-desc">{top_region.get('description', '')}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
                     # 縄文系 vs 弥生系 分析
-                    st.markdown("#### 🧬 顔タイプ分析（縄文系 vs 弥生系）")
+                    st.markdown("#### 🧬 顔タイプ分析（縄文系 🤍 弥生系）")
                     c_jy1, c_jy2 = st.columns([1, 1])
                     with c_jy1:
-                        st.metric("縄文系スコア (濃い/彫深)", f"{jy['jomon_percent']}%")
+                        st.metric("縄文系スコア (濃いめ/彫深)", f"{jy['jomon_percent']}%")
                     with c_jy2:
-                        st.metric("弥生系スコア (涼やか/面長)", f"{jy['yayoi_percent']}%")
+                        st.metric("弥生系スコア (すっきり/涼やか)", f"{jy['yayoi_percent']}%")
 
                     st.progress(jy["jomon_percent"] / 100.0)
-                    st.caption(f"**判定タイプ**: **{jy['face_type']}** | {jy['description']}")
+                    st.caption(f"**判定**: **{jy['face_type']}** | {jy['description']}")
+
+                    # 可愛い特徴タグ
+                    tags_html = ""
+                    if jy["jomon_percent"] >= 50:
+                        tags_html = '<div class="tag-container"><span class="tag-pill">#ぱっちり目</span><span class="tag-pill">#立体骨格</span><span class="tag-pill">#濃いめエモ顔</span><span class="tag-pill">#縄文ルーツ</span></div>'
+                    else:
+                        tags_html = '<div class="tag-container"><span class="tag-pill">#透明感</span><span class="tag-pill">#涼やか美人</span><span class="tag-pill">#すっきり小顔</span><span class="tag-pill">#弥生ルーツ</span></div>'
+                    st.markdown(tags_html, unsafe_allow_html=True)
 
                     # Supabase Storage への非同期保存
                     if raw_bytes:
@@ -506,7 +582,7 @@ if diag_mode == "👤 個人診断 (1名)":
                 orientation="h",
                 text="percentage",
                 color="percentage",
-                color_continuous_scale="Viridis",
+                color_continuous_scale="Sunset",
                 labels={"percentage": "確率 (%)", "region": "地方ブロック"},
                 title="地方ブロックごとの推定確率"
             )
@@ -547,7 +623,7 @@ if diag_mode == "👤 個人診断 (1名)":
 
         s_col1, s_col2 = st.columns([1, 2])
         with s_col1:
-            st.link_button("𝕏 (Twitter) で診断結果をポスト", url=x_url, use_container_width=True, type="primary")
+            st.link_button("𝕏 で診断結果をシェアする 🎀", url=x_url, use_container_width=True, type="primary")
         with s_col2:
             st.text_area("シェア用テキスト（コピーして使えます）", share_text, height=105)
 
@@ -556,12 +632,11 @@ if diag_mode == "👤 個人診断 (1名)":
 # ----------------------------------------------------
 else:
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%); border: 1.5px solid #FCD34D; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;">
-        <div style="font-weight: 800; color: #92400E; font-size: 0.98rem; margin-bottom: 3px;">
-            👥 【最高精度モード】集合写真・グループ診断
-        </div>
-        <div style="color: #B45309; font-size: 0.88rem; line-height: 1.5;">
-            卒業アルバム、クラス写真、部活動などの写真から全員の顔を自動判定！人数が多いほど的中精度がアップします。
+    <div class="recommend-banner">
+        <div class="recommend-banner-icon">👥</div>
+        <div>
+            <div class="recommend-banner-text">✨ 【最高精度】みんなの集合写真で診断！</div>
+            <div class="recommend-banner-sub">卒アルや部活写真から全員の顔を自動解析！人数が多いほど的中率がアップするよ🤍</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -610,12 +685,12 @@ else:
 
                     st.markdown(f"""
                     <div class="result-card-main">
-                        <div class="result-card-title">👥 グループ統合 骨格ルーツ判定 ({g_result['num_faces']}名統合)</div>
-                        <div class="result-card-region">
-                            🗾 推定地域: <span style="color: #2563EB;">【{g_top_region['region']}】</span> <span style="font-size: 1.15rem; color: #3B82F6;">({g_top_region['percentage']}%)</span>
-                        </div>
+                        <div class="result-card-badge">👥 グループ診断結果発表 ({g_result['num_faces']}名統合)</div>
                         <div class="result-card-pref">
-                            🏆 最有力都道府県: 【{g_top_pref['prefecture']}】 ({g_top_pref['percentage']:.2f}%)
+                            みんなのルーツは… <span class="pref-highlight">【{g_top_pref['prefecture']}】</span> っぽい！🥇
+                        </div>
+                        <div class="result-card-region">
+                            🗾 エリア: <b>{g_top_region['region']}</b> <span style="font-size: 0.95rem; color: #FF6584;">({g_top_region['percentage']}%)</span>
                         </div>
                         <div class="result-card-desc">{g_top_region.get('description', '')}</div>
                     </div>
@@ -670,7 +745,7 @@ else:
                 orientation="h",
                 text="percentage",
                 color="percentage",
-                color_continuous_scale="Viridis",
+                color_continuous_scale="Sunset",
                 labels={"percentage": "確率 (%)", "region": "地方ブロック"},
                 title=f"グループ統合 ({g_result['num_faces']}名) 地方ブロックごとの推定確率"
             )
