@@ -22,7 +22,7 @@ from uploader import upload_diagnosis_async
 # ページ設定
 st.set_page_config(
     page_title="AI顔貌 出身地＆ルーツ判定 | 日本列島の地域遺伝形質をAIで診断",
-    page_icon="🗾",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -83,14 +83,6 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(255, 117, 140, 0.12);
         position: relative;
         overflow: hidden;
-    }
-    .hero-container::before {
-        content: '✨';
-        position: absolute; top: 12px; left: 20px; font-size: 1.5rem; opacity: 0.6;
-    }
-    .hero-container::after {
-        content: '🌸';
-        position: absolute; bottom: 12px; right: 20px; font-size: 1.5rem; opacity: 0.6;
     }
     .hero-badge {
         display: inline-block;
@@ -217,6 +209,37 @@ st.markdown("""
         box-shadow: 0 2px 6px rgba(255, 117, 140, 0.1);
     }
 
+    /* ── スタイリッシュな順位サークルバッジ (環境依存絵文字メダルの完全代替) ── */
+    .rank-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        font-size: 0.82rem;
+        font-weight: 800;
+        margin-right: 10px;
+        background: #F1F5F9;
+        color: #64748B;
+        flex-shrink: 0;
+    }
+    .rank-num-1 { background: #FFE4E6; color: #E11D48; border: 1.5px solid #FDA4AF; }
+    .rank-num-2 { background: #F1F5F9; color: #334155; border: 1.5px solid #CBD5E1; }
+    .rank-num-3 { background: #FFEDD5; color: #C2410C; border: 1.5px solid #FDBA74; }
+
+    .recommend-badge {
+        display: inline-block;
+        background: #FF758C;
+        color: #FFFFFF;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.04em;
+        flex-shrink: 0;
+    }
+
     /* ── ランキングカード ── */
     .rank-item {
         background: #FFFFFF;
@@ -292,23 +315,23 @@ predictor = load_predictor()
 
 # ----------------- サイドバー（一般公開用） -----------------
 with st.sidebar:
-    st.header("🗾 アプリについて")
+    st.header("アプリについて")
     st.markdown("""
     本アプリは、最先端の**3D顔面解剖骨格解析**と**マルチモーダル深層学習**を用い、顔写真から日本列島の地域遺伝的ルーツ（地方・都道府県・縄文/弥生）を推定するWebアプリケーションです。
 
     ---
-    ### 🔬 科学的アプローチ
+    ### 科学的アプローチ
     - **3D68点解剖骨格解析**:
       目・鼻・顎・頬骨の彫りの深さや比率を立体座標化。
     - **縄文 vs 弥生 形質スコアリング**:
       濃顔・彫深（縄文系）と涼やか・面長（弥生系）のバランスを客観的正規分布で算出。
-    - **👥 集合写真ベイズ尤度比統合 (LLR) 【高精度の鍵】**:
+    - **集合写真ベイズ尤度比統合 (LLR) 【高精度の鍵】**:
       単一の顔写真では「表情・角度・個体差ノイズ」が地域差シグナルの約5〜12倍存在します。
       同郷の複数人（3〜8人以上）の骨格をベイズ対数尤度比で統合することで、
       個人差ノイズが統計的に相殺（1/√Nに消去）され、地方・都道府県の的中率が飛躍的に高まります。
 
     ---
-    ### 🔒 データ取り扱いについて
+    ### データ取り扱いについて
     アップロードされた顔画像および診断結果は、AIの精度向上・学術分析目的でのみ安全に暗号化通信により管理・蓄積されます。第三者への開示・商用目的での利用は行われません。
     """)
 
@@ -336,10 +359,10 @@ components.html("""
       pointer-events: none; transition: opacity 0.2s ease; opacity: 0;
     `;
     overlay.innerHTML = `
-      <div style="text-align: center; border: 3px dashed rgba(255,255,255,0.95); border-radius: 28px; padding: 40px 60px; background: rgba(255,255,255,0.18); box-shadow: 0 20px 50px rgba(255, 101, 132, 0.35);">
-        <div style="font-size: 4.5rem; margin-bottom: 12px; line-height: 1;">📸</div>
-        <div style="font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; letter-spacing: 0.04em;">画面のどこでもドロップしてね🤍</div>
-        <div style="font-size: 1.05rem; opacity: 0.95; font-weight: 700;">指をはなすと自動で診断スタート！✨</div>
+      <div style="text-align: center; border: 3px dashed rgba(255,255,255,0.95); border-radius: 24px; padding: 36px 50px; background: rgba(255,255,255,0.18); box-shadow: 0 20px 50px rgba(255, 101, 132, 0.35);">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(255, 255, 255, 0.9); color: #FF6584; font-size: 1.2rem; font-weight: 900; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(255, 101, 132, 0.2);">DROP</div>
+        <div style="font-size: 1.6rem; font-weight: 900; margin-bottom: 8px; letter-spacing: 0.04em; color: #FFFFFF;">画面のどこでもドロップOK</div>
+        <div style="font-size: 0.95rem; opacity: 0.95; font-weight: 600; color: #FFFFFF;">ファイルを離すと自動で診断を開始します</div>
       </div>
     `;
     pDoc.body.appendChild(overlay);
@@ -422,21 +445,21 @@ components.html("""
 # ----------------- メイン画面ヘッダー -----------------
 st.markdown("""
 <div class="hero-container">
-    <div class="hero-badge">✨ AI顔タイプ診断</div>
-    <div class="hero-title">🗾 AI出身地・ルーツ診断</div>
+    <div class="hero-badge">AI FACE ROOTS</div>
+    <div class="hero-title">AI出身地・ルーツ診断</div>
     <div class="hero-subtitle">
-        あなたの顔、どこの県っぽい？🤍<br>
-        全国47都道府県でいちばん顔の系統が似てる地域をAIが診断しちゃうよ！✨
+        あなたの顔、どこの都道府県の系統に近い？<br>
+        全国47都道府県でいちばん顔の骨格特徴が似ている地域をAIが判定します。
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # 診断モード選択
 diag_mode = st.radio(
-    "診断モードを選択してね",
+    "診断モードを選択",
     [
-        "👤 ひとり写真で診断",
-        "👥 集合写真・みんなで診断 ✨おすすめ"
+        "ひとり写真で診断 (1名)",
+        "集合写真で診断 (複数名 / おすすめ)"
     ],
     horizontal=True
 )
@@ -444,10 +467,10 @@ diag_mode = st.radio(
 # 集合写真おすすめバナー
 st.markdown("""
 <div class="recommend-banner">
-    <div class="recommend-banner-icon">📸</div>
+    <div class="recommend-badge">RECOMMEND</div>
     <div>
-        <div class="recommend-banner-text">✨ 卒アルやクラス写真、部活の集合写真で診断すると精度UP！</div>
-        <div class="recommend-banner-sub">同じ地元・学校の仲間（3人以上）の集合写真だと、さらに正確なルーツがわかっちゃうよ🤍</div>
+        <div class="recommend-banner-text">卒業アルバムやクラス写真、部活動などの集合写真で診断すると精度UP</div>
+        <div class="recommend-banner-sub">同じ学校や地元の仲間（3名以上）の写真を使うと、個人差が相殺されてより確かな地域傾向がわかります。</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -455,11 +478,11 @@ st.markdown("""
 # ----------------------------------------------------
 # A. 個人診断モード (1名)
 # ----------------------------------------------------
-if diag_mode == "👤 ひとり写真で診断":
+if diag_mode == "ひとり写真で診断 (1名)":
     col1, col2 = st.columns([1, 1], gap="large")
 
     with col1:
-        st.subheader("📷 写真の入力")
+        st.subheader("写真の選択")
         input_method = st.radio("入力方法を選択", ["ファイルからアップロード", "Webカメラで撮影"], horizontal=True)
         
         image_input = None
@@ -484,16 +507,16 @@ if diag_mode == "👤 ひとり写真で診断":
         st.markdown("""
         <div style="background: linear-gradient(135deg, #FFF0F5 0%, #FFF8F0 100%); border: 1.5px solid #FFCCD5; border-radius: 14px; padding: 12px 16px; margin-top: 14px;">
             <div style="font-size: 0.85rem; color: #BE185D; line-height: 1.5; font-weight: 700;">
-                💡 <b>もっと正確に診断したいときは？</b><br>
-                <span style="font-weight: 500; color: #831843;">卒業アルバムや部活の集合写真で診断する「みんなで診断」が超おすすめだよ🤍</span>
+                <b>より高精度に診断したい場合</b><br>
+                <span style="font-weight: 500; color: #831843;">卒業アルバムや部活動などの複数人で診断する「集合写真モード」がおすすめです。</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
-        st.subheader("🎯 診断結果")
+        st.subheader("診断結果")
         if image_input is None:
-            st.info("👈 左側のエリアから写真をアップロードまたは撮影してください。")
+            st.info("左側のエリアから写真をアップロードまたは撮影してください。")
         else:
             if predictor is None:
                 st.error("推論エンジンのロードに失敗しました。")
@@ -517,22 +540,22 @@ if diag_mode == "👤 ひとり写真で診断":
                     top_pref = result["top_prefectures"][0]
                     jy = result["jomon_yayoi"]
 
-                    # メイン判定カード (可愛いお祝いカード)
+                    # メイン判定カード
                     st.markdown(f"""
                     <div class="result-card-main">
-                        <div class="result-card-badge">🎉 診断結果発表</div>
+                        <div class="result-card-badge">DIAGNOSIS RESULT</div>
                         <div class="result-card-pref">
-                            あなたの顔は… <span class="pref-highlight">【{top_pref['prefecture']}】</span> っぽい！🥇
+                            あなたの顔は <span class="pref-highlight">【{top_pref['prefecture']}】</span> の系統
                         </div>
                         <div class="result-card-region">
-                            🗾 エリア: <b>{top_region['region']}</b> <span style="font-size: 0.95rem; color: #FF6584;">({top_region['percentage']}%)</span>
+                            推定エリア: <b>{top_region['region']}</b> <span style="font-size: 0.95rem; color: #FF6584;">({top_region['percentage']}%)</span>
                         </div>
                         <div class="result-card-desc">{top_region.get('description', '')}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
                     # 縄文系 vs 弥生系 分析
-                    st.markdown("#### 🧬 顔タイプ分析（縄文系 🤍 弥生系）")
+                    st.markdown("#### 顔タイプ分析（縄文系 / 弥生系）")
                     c_jy1, c_jy2 = st.columns([1, 1])
                     with c_jy1:
                         st.metric("縄文系スコア (濃いめ/彫深)", f"{jy['jomon_percent']}%")
@@ -573,7 +596,7 @@ if diag_mode == "👤 ひとり写真で診断":
         res_col1, res_col2 = st.columns([1, 1], gap="large")
 
         with res_col1:
-            st.markdown("### 🗺️ 全地方ブロック判定（6区分）")
+            st.markdown("### 地方ブロック判定（6区分）")
             df_region = pd.DataFrame(result["top_regions"])
             fig_region = px.bar(
                 df_region,
@@ -591,21 +614,23 @@ if diag_mode == "👤 ひとり写真で診断":
             st.plotly_chart(fig_region, use_container_width=True)
 
         with res_col2:
-            st.markdown("### 🏆 47都道府県 推定確率ランキング (Top 5)")
-            medals = ["🥇", "🥈", "🥉", "4位", "5位"]
+            st.markdown("### 47都道府県 推定確率ランキング (Top 5)")
             top5 = result["top_prefectures"][:5]
 
             for idx, p in enumerate(top5):
-                m_icon = medals[idx]
-                r_class = f"rank-item rank-item-{idx+1}" if idx < 3 else "rank-item"
+                rank_num = idx + 1
+                badge_class = f"rank-num rank-num-{rank_num}" if rank_num <= 3 else "rank-num"
+                r_class = f"rank-item rank-item-{rank_num}" if rank_num <= 3 else "rank-item"
                 st.markdown(f"""
                 <div class="{r_class}">
-                    <div>
-                        <span style="font-weight:800; font-size:1.15rem; margin-right:8px;">{m_icon}</span>
-                        <span style="font-weight:700; color:#1E3A8A; font-size:1.1rem;">{p['prefecture']}</span>
-                        <span style="color:#64748B; font-size:0.85rem; margin-left:8px;">({p['region']})</span>
+                    <div style="display: flex; align-items: center;">
+                        <span class="{badge_class}">{rank_num}</span>
+                        <span style="font-weight:700; color:#1E293B; font-size:1.05rem;">{p['prefecture']}</span>
+                        <span style="color:#64748B; font-size:0.82rem; margin-left:8px;">({p['region']})</span>
                     </div>
-                    <div style="font-weight:800; font-size:1.15rem; color:#2563EB;">{p['percentage']:.2f}%</div>
+                    <div style="font-weight:800; color:#E11D48; font-size:1.05rem;">
+                        {p['percentage']:.2f}%
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -616,14 +641,14 @@ if diag_mode == "👤 ひとり写真で診断":
 
         # SNSシェアセクション
         st.divider()
-        st.markdown("### 📱 診断結果をシェアする")
-        share_text = f"【AI顔画像 出身地＆ルーツ診断結果】\n🗾 推定地域: 【{top_region['region']}】 ({top_region['percentage']}%)\n🏆 最有力県: 【{top_pref['prefecture']}】 ({top_pref['percentage']:.1f}%)\n🧬 顔タイプ: {jy['face_type']} (縄文 {jy['jomon_percent']}% / 弥生 {jy['yayoi_percent']}%)\n#出身地判定AI #AI顔診断 #ルーツ診断 #縄文顔 #弥生顔"
+        st.markdown("### 診断結果をシェアする")
+        share_text = f"【AI顔画像 出身地＆ルーツ判定結果】\n推定エリア: 【{top_region['region']}】 ({top_region['percentage']}%)\n最有力都道府県: 【{top_pref['prefecture']}】 ({top_pref['percentage']:.1f}%)\n顔タイプ: {jy['face_type']} (縄文 {jy['jomon_percent']}% / 弥生 {jy['yayoi_percent']}%)\n#出身地判定AI #AI顔診断 #ルーツ診断 #縄文顔 #弥生顔"
         encoded_text = urllib.parse.quote(share_text)
         x_url = f"https://twitter.com/intent/tweet?text={encoded_text}"
 
         s_col1, s_col2 = st.columns([1, 2])
         with s_col1:
-            st.link_button("𝕏 で診断結果をシェアする 🎀", url=x_url, use_container_width=True, type="primary")
+            st.link_button("X (旧Twitter) で結果をポスト", url=x_url, use_container_width=True, type="primary")
         with s_col2:
             st.text_area("シェア用テキスト（コピーして使えます）", share_text, height=105)
 
@@ -633,10 +658,10 @@ if diag_mode == "👤 ひとり写真で診断":
 else:
     st.markdown("""
     <div class="recommend-banner">
-        <div class="recommend-banner-icon">👥</div>
+        <div class="recommend-badge">GROUP</div>
         <div>
-            <div class="recommend-banner-text">✨ 【最高精度】みんなの集合写真で診断！</div>
-            <div class="recommend-banner-sub">卒アルや部活写真から全員の顔を自動解析！人数が多いほど的中率がアップするよ🤍</div>
+            <div class="recommend-banner-text">集合写真・グループ診断モード</div>
+            <div class="recommend-banner-sub">卒業アルバムやクラス写真から全員の顔を自動解析。人数が多いほど的中精度が向上します。</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -644,7 +669,7 @@ else:
     g_col1, g_col2 = st.columns([1, 1], gap="large")
 
     with g_col1:
-        st.subheader("📷 集合写真の入力")
+        st.subheader("集合写真の選択")
         g_input_method = st.radio("入力方法を選択", ["ファイルからアップロード", "Webカメラで撮影"], horizontal=True, key="group_input_method")
         
         g_image_input = None
@@ -667,9 +692,9 @@ else:
             st.image(g_image_input, caption="入力された集合写真", use_container_width=True)
 
     with g_col2:
-        st.subheader("🎯 グループ統合判定結果")
+        st.subheader("グループ統合 判定結果")
         if g_image_input is None:
-            st.info("👈 左側のエリアから集合写真をアップロードまたは撮影してください。")
+            st.info("左側のエリアから集合写真をアップロードまたは撮影してください。")
         else:
             if predictor is None:
                 st.error("推論エンジンのロードに失敗しました。")
@@ -685,19 +710,19 @@ else:
 
                     st.markdown(f"""
                     <div class="result-card-main">
-                        <div class="result-card-badge">👥 グループ診断結果発表 ({g_result['num_faces']}名統合)</div>
+                        <div class="result-card-badge">GROUP RESULT ({g_result['num_faces']}名統合)</div>
                         <div class="result-card-pref">
-                            みんなのルーツは… <span class="pref-highlight">【{g_top_pref['prefecture']}】</span> っぽい！🥇
+                            グループ全体の傾向は <span class="pref-highlight">【{g_top_pref['prefecture']}】</span> タイプ
                         </div>
                         <div class="result-card-region">
-                            🗾 エリア: <b>{g_top_region['region']}</b> <span style="font-size: 0.95rem; color: #FF6584;">({g_top_region['percentage']}%)</span>
+                            推定エリア: <b>{g_top_region['region']}</b> <span style="font-size: 0.95rem; color: #FF6584;">({g_top_region['percentage']}%)</span>
                         </div>
                         <div class="result-card-desc">{g_top_region.get('description', '')}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
                     # グループ平均顔タイプ分析
-                    st.markdown("#### 🧬 グループ平均 顔タイプ分析（縄文系 vs 弥生系）")
+                    st.markdown("#### グループ平均 顔タイプ分析（縄文系 / 弥生系）")
                     jomon_vals = [ind["jomon_yayoi"]["jomon_percent"] for ind in g_result["individual_results"]]
                     avg_jomon = round(float(np.mean(jomon_vals)), 1)
                     avg_yayoi = round(100.0 - avg_jomon, 1)
@@ -736,7 +761,7 @@ else:
         g_res_col1, g_res_col2 = st.columns([1, 1], gap="large")
 
         with g_res_col1:
-            st.markdown("### 🗺️ グループ統合 地方ブロック判定（6区分）")
+            st.markdown("### グループ統合 地方ブロック判定（6区分）")
             df_g_region = pd.DataFrame(g_result["group_top_regions"])
             fig_g_region = px.bar(
                 df_g_region,
@@ -754,21 +779,23 @@ else:
             st.plotly_chart(fig_g_region, use_container_width=True)
 
         with g_res_col2:
-            st.markdown("### 🏆 グループ統合 47都道府県 推定確率ランキング (Top 5)")
-            medals = ["🥇", "🥈", "🥉", "4位", "5位"]
+            st.markdown("### グループ統合 47都道府県 推定確率ランキング (Top 5)")
             g_top5 = g_result["group_top_prefectures"][:5]
 
             for idx, p in enumerate(g_top5):
-                m_icon = medals[idx]
-                r_class = f"rank-item rank-item-{idx+1}" if idx < 3 else "rank-item"
+                rank_num = idx + 1
+                badge_class = f"rank-num rank-num-{rank_num}" if rank_num <= 3 else "rank-num"
+                r_class = f"rank-item rank-item-{rank_num}" if rank_num <= 3 else "rank-item"
                 st.markdown(f"""
                 <div class="{r_class}">
-                    <div>
-                        <span style="font-weight:800; font-size:1.15rem; margin-right:8px;">{m_icon}</span>
-                        <span style="font-weight:700; color:#1E3A8A; font-size:1.1rem;">{p['prefecture']}</span>
-                        <span style="color:#64748B; font-size:0.85rem; margin-left:8px;">({p['region']})</span>
+                    <div style="display: flex; align-items: center;">
+                        <span class="{badge_class}">{rank_num}</span>
+                        <span style="font-weight:700; color:#1E293B; font-size:1.05rem;">{p['prefecture']}</span>
+                        <span style="color:#64748B; font-size:0.82rem; margin-left:8px;">({p['region']})</span>
                     </div>
-                    <div style="font-weight:800; font-size:1.15rem; color:#2563EB;">{p['percentage']:.2f}%</div>
+                    <div style="font-weight:800; color:#E11D48; font-size:1.05rem;">
+                        {p['percentage']:.2f}%
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -779,7 +806,7 @@ else:
 
         # メンバー個別診断カード
         st.divider()
-        st.markdown(f"### 👥 検出されたメンバー一覧（全{g_result['num_faces']}名）")
+        st.markdown(f"### 検出されたメンバー一覧（全{g_result['num_faces']}名）")
         st.caption("※個人単体には表情や角度などの個人差ノイズが含まれますが、上記のグループベイズ統合により個人差が相殺され、高精度な共通出身地が導き出されます。")
         
         st.image(g_result["annotated_image"], caption="検出された各メンバーの顔枠 (左から順に #1〜)", use_container_width=True)
@@ -803,8 +830,8 @@ else:
 
         # SNSシェアセクション (グループ用)
         st.divider()
-        st.markdown("### 📱 グループ診断結果をシェアする")
-        grp_share_text = f"【AI集合写真 出身地＆ルーツ診断結果】\n👥 メンバー{g_result['num_faces']}名の骨格統合判定！\n🗾 グループ推定地域: 【{g_top_region['region']}】 ({g_top_region['percentage']}%)\n🏆 最有力都道府県: 【{g_top_pref['prefecture']}】 ({g_top_pref['percentage']:.1f}%)\n🧬 グループ傾向: {grp_type}\n#出身地判定AI #集合写真診断 #同郷判定 #AI顔診断"
+        st.markdown("### グループ診断結果をシェアする")
+        grp_share_text = f"【AI集合写真 出身地＆ルーツ判定結果】\nメンバー{g_result['num_faces']}名の骨格統合判定\nグループ推定地域: 【{g_top_region['region']}】 ({g_top_region['percentage']}%)\n最有力都道府県: 【{g_top_pref['prefecture']}】 ({g_top_pref['percentage']:.1f}%)\nグループ傾向: {grp_type}\n#出身地判定AI #集合写真診断 #同郷判定 #AI顔診断"
         grp_encoded_text = urllib.parse.quote(grp_share_text)
         grp_x_url = f"https://twitter.com/intent/tweet?text={grp_encoded_text}"
 
