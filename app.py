@@ -260,23 +260,20 @@ st.markdown("""
 diag_mode = st.radio(
     "診断モードを選択してください",
     [
-        "👥 グループ・集合写真診断 (複数名) ★精度大幅UP・推奨",
-        "👤 個人診断 (1名)"
+        "👤 個人診断 (1名)",
+        "👥 グループ・集合写真診断 (複数名) ★精度UP"
     ],
-    horizontal=True,
-    help="同じ地元・学校・部活などのメンバーが写った集合写真（複数名）または単独写真（1名）を選択できます。"
+    horizontal=True
 )
 
-# なぜ集合写真の方が精度が高いのか？常時解説バナー
+# 集合写真おすすめバナー（シンプル表示）
 st.markdown("""
-<div style="background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border: 1.5px solid #86EFAC; border-radius: 14px; padding: 18px 22px; margin: 12px 0 24px 0; box-shadow: 0 3px 10px rgba(22, 101, 52, 0.06);">
-    <div style="font-weight: 800; color: #166534; font-size: 1.08rem; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-        <span>🎯</span> なぜ「集合写真・グループ診断」のほうが圧倒的に精度が高いのか？
-    </div>
-    <div style="color: #15803D; font-size: 0.94rem; line-height: 1.65;">
-        <b>1人の写真</b>には、表情・メイク・角度・個人の骨格差といった「個人差ノイズ」が大きく含まれるため、AIでも特定が難しくなります。<br>
-        しかし<b>同郷の仲間（同じ地元・学校・部活・サークルなど）が3〜8人以上写った集合写真</b>では、個人差が統計的に綺麗に打ち消し合い（相殺）、
-        骨格に刻まれた<b>純粋な地域遺伝ルーツ（地域シグナル）だけが共鳴・増幅</b>されるため、<b>的中精度が劇的に向上（都道府県Top-1が50%以上へ急上昇）</b>します！
+<div style="background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px 18px; margin: 8px 0 20px 0; box-shadow: 0 2px 8px rgba(22, 101, 52, 0.05);">
+    <div style="font-weight: 700; color: #166534; font-size: 0.95rem; line-height: 1.5;">
+        ✨ <b>グループ・集合写真のほうが精度が格段に高くなります！</b><br>
+        <span style="font-size: 0.86rem; color: #15803D; font-weight: 500;">
+            おすすめ：同じ学校の<b>卒業アルバム</b>、クラス写真、部活動などの集合写真（3名以上）
+        </span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -311,10 +308,9 @@ if diag_mode == "👤 個人診断 (1名)":
             st.image(image_input, caption="入力された写真", use_container_width=True)
             
         st.markdown("""
-        <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 12px 14px; margin-top: 14px;">
-            <div style="font-size: 0.88rem; color: #1E40AF; line-height: 1.5;">
-                💡 <b>さらに高い精度で診断したい場合</b><br>
-                同じ地元・出身校の友人と写った写真があれば、上の「👥 グループ・集合写真診断」をお試しください。個人差のブレが相殺されて的中精度が大幅に高まります。
+        <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 10px 14px; margin-top: 14px;">
+            <div style="font-size: 0.85rem; color: #1E40AF; line-height: 1.4;">
+                💡 <b>より高精度に診断したい場合</b>: 卒業アルバムや部活動などの集合写真を使う「グループ診断」がおすすめです！
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -453,13 +449,12 @@ if diag_mode == "👤 個人診断 (1名)":
 # ----------------------------------------------------
 else:
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%); border: 1.5px solid #FCD34D; border-radius: 12px; padding: 14px 18px; margin-bottom: 18px;">
-        <div style="font-weight: 800; color: #92400E; font-size: 1.0rem; margin-bottom: 4px;">
-            👥 【最高精度モード】同郷メンバーの集合推論（ベイズ対数尤度比統合）
+    <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%); border: 1.5px solid #FCD34D; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;">
+        <div style="font-weight: 800; color: #92400E; font-size: 0.98rem; margin-bottom: 3px;">
+            👥 【最高精度モード】集合写真・グループ診断
         </div>
-        <div style="color: #B45309; font-size: 0.91rem; line-height: 1.6;">
-            写真に写っている全員の3D顔貌骨格を個別検出し、ベイズ統計統合で個人差ノイズを完全消去。<br>
-            同郷グループ（3〜8名）全体の共通ルーツを最高精度（都道府県Top-1精度50%以上）で診断します。
+        <div style="color: #B45309; font-size: 0.88rem; line-height: 1.5;">
+            卒業アルバム、クラス写真、部活動などの写真から全員の顔を自動判定！人数が多いほど的中精度がアップします。
         </div>
     </div>
     """, unsafe_allow_html=True)
