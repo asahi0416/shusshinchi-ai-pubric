@@ -50,7 +50,7 @@ if query_params.get("page") == "admin" or query_params.get("admin") in ["1", "tr
 st.markdown("""
 <style>
     /* Streamlit標準UI要素の完全消去 */
-    header[data-testid="stHeader"], footer, #MainMenu, .stDeployButton, [data-testid="stDeployButton"], [data-testid="stToolbar"], [data-testid="stToolbarActions"], [data-testid="stStatusWidget"], [data-testid="stDecoration"] {
+    header[data-testid="stHeader"], footer, #MainMenu, .stDeployButton, [data-testid="stDeployButton"], [data-testid="stToolbar"], [data-testid="stToolbarActions"], [data-testid="stStatusWidget"], [data-testid="stDecoration"], [class*="viewerBadge"], [class*="ViewerBadge"], [class*="ProfilePagePreview"], [class*="embeddedAppMetaInfoBar"], [data-testid="manage-app-button"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
@@ -413,6 +413,62 @@ components.html("""
 (function() {
   const pDoc = window.parent.document;
   const pWin = window.parent;
+
+  // 親フレーム（Streamlit Cloudホスト側）の作成者プロフィール・アバター・バッジを完全消去
+  try {
+    if (pDoc && !pDoc.getElementById('hide-creator-style-injected')) {
+      const hideCreatorStyle = pDoc.createElement('style');
+      hideCreatorStyle.id = 'hide-creator-style-injected';
+      hideCreatorStyle.innerHTML = `
+        [class*="ProfilePagePreview"],
+        [class*="profile"],
+        [class*="viewerBadge"],
+        [class*="ViewerBadge"],
+        [class*="manageApp"],
+        [class*="ManageApp"],
+        [class*="embeddedAppMetaInfoBar"],
+        [data-testid="manage-app-button"],
+        [data-testid="stStatusWidget"],
+        header[data-testid="stHeader"],
+        footer {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          height: 0px !important;
+          width: 0px !important;
+        }
+      `;
+      pDoc.head.appendChild(hideCreatorStyle);
+    }
+
+    const removeCreatorElements = () => {
+      if (!pDoc) return;
+      const selectors = [
+        '[class*="ProfilePagePreview"]',
+        '[class*="viewerBadge"]',
+        '[class*="ViewerBadge"]',
+        '[class*="manageApp"]',
+        '[class*="ManageApp"]',
+        '[class*="embeddedAppMetaInfoBar"]',
+        '[data-testid="manage-app-button"]'
+      ];
+      selectors.forEach(sel => {
+        pDoc.querySelectorAll(sel).forEach(el => {
+          el.style.setProperty('display', 'none', 'important');
+        });
+      });
+    };
+
+    removeCreatorElements();
+    if (pDoc && pDoc.body) {
+      const observer = new MutationObserver(removeCreatorElements);
+      observer.observe(pDoc.body, { childList: true, subtree: true });
+    }
+  } catch (e) {
+    // cross-origin guard
+  }
+
   if (!pDoc || pDoc.__global_drop_ready) return;
   pDoc.__global_drop_ready = true;
 
