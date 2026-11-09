@@ -1,0 +1,27 @@
+name: Keepalive (Streamlit & Supabase)
+
+on:
+  schedule:
+    # 毎日 UTC 0:00 (日本時間 午前9:00) に自動実行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # GitHub上の画面から手動実行も可能
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit Cloud App (Prevent Sleep)
+        run: |
+          echo "Pinging Streamlit Cloud..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://shusshinchi-ai.streamlit.app)
+          echo "Streamlit HTTP Status: $HTTP_STATUS"
+
+      - name: Ping Supabase Storage API (Prevent Pause)
+        run: |
+          echo "Pinging Supabase Storage..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "https://cweuchydgpyumvnunmyn.supabase.co/storage/v1/object/list/images" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3ZXVjaHlkZ3B5dW12bnVubXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTM5NzgsImV4cCI6MjA5MzQyOTk3OH0.qJ5kmfL6CD6OhYS3aC3aqEPQXZGwdiZ1pWK-Kd-4egE" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3ZXVjaHlkZ3B5dW12bnVubXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTM5NzgsImV4cCI6MjA5MzQyOTk3OH0.qJ5kmfL6CD6OhYS3aC3aqEPQXZGwdiZ1pWK-Kd-4egE" \
+            -H "Content-Type: application/json" \
+            -d '{"prefix":"shusshinchi","limit":1}')
+          echo "Supabase HTTP Status: $HTTP_STATUS"
