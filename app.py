@@ -27,6 +27,25 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ----------------- 管理者モード（シークレットURL対応） -----------------
+# 例: https://shusshinchi-ai.streamlit.app/?page=admin または ?admin=1
+query_params = st.query_params
+if query_params.get("page") == "admin" or query_params.get("admin") in ["1", "true"]:
+    admin_html_path = Path(__file__).parent / "admin.html"
+    if admin_html_path.exists():
+        with open(admin_html_path, "r", encoding="utf-8") as f:
+            admin_code = f.read()
+        import streamlit.components.v1 as components
+        st.markdown("""
+        <style>
+            header[data-testid="stHeader"] { display: none !important; }
+            .block-container { padding: 0 !important; max-width: 100% !important; }
+            iframe { width: 100% !important; min-height: 98vh !important; border: none !important; }
+        </style>
+        """, unsafe_allow_html=True)
+        components.html(admin_code, height=950, scrolling=True)
+        st.stop()
+
 # カスタムCSS（洗練されたモダン＆和風テイスト）
 st.markdown("""
 <style>
