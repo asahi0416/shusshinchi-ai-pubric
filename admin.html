@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>出身地判定AI - 管理画面 (画像・GPS・診断データマネージャー)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗾</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a; --surface: #1e293b; --surface2: #334155; --border: #475569;
+      --accent: #3b82f6; --accent2: #60a5fa; --text: #f8fafc; --muted: #94a3b8;
+      --danger: #ef4444; --success: #10b981; --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ログイン画面 */
+    #login-screen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 30% 40%, #1e40af33 0%, transparent 60%),
+                  radial-gradient(ellipse at 70% 70%, #2563eb22 0%, transparent 60%), var(--bg);
+    }
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      padding: 44px 36px; width: 100%; max-width: 380px; text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .login-card .icon { font-size: 3rem; margin-bottom: 12px; }
+    .login-card h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.35rem; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); font-size: 0.85rem; margin-bottom: 24px; }
+    .login-card input {
+      width: 100%; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 1rem; outline: none; margin-bottom: 14px;
+    }
+    .login-card input:focus { border-color: var(--accent); }
+    .login-card button {
+      width: 100%; padding: 12px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; border-radius: 10px; color: #fff; font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+    }
+    #login-error { margin-top: 10px; color: var(--danger); font-size: 0.85rem; }
+
+    /* メイン画面 */
+    #main-screen { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 20px; height: 56px; display: flex; align-items: center;
+      justify-content: space-between; flex-shrink: 0;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-left h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.05rem; color: var(--accent2); }
+    #image-count { color: var(--muted); font-size: 0.82rem; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .mode-toggle { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .mode-btn {
+      padding: 6px 14px; border: none; background: transparent; color: var(--muted);
+      font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+    }
+    .mode-btn.active { background: var(--accent); color: #fff; font-weight: 700; }
+    #logout-btn {
+      padding: 6px 12px; background: transparent; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted); font-size: 0.8rem; cursor: pointer;
+    }
+    #logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    .toolbar {
+      padding: 8px 20px; display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+    }
+    .tb-btn {
+      padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+    }
+    .tb-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* コンテンツエリア */
+    #content-area { flex: 1; overflow-y: auto; padding: 20px; position: relative; }
+    #image-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
+    }
+    .image-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.15s; display: flex; flex-direction: column;
+    }
+    .image-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .thumb-wrap { width: 100%; height: 160px; background: #000; overflow: hidden; position: relative; }
+    .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .card-meta { padding: 12px; font-size: 0.8rem; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .card-title { font-weight: 700; color: #fff; font-size: 0.88rem; }
+    .card-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; width: fit-content; }
+    .badge-gps { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-no-gps { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+    .card-diag { color: var(--accent2); font-weight: 700; }
+    .card-date { color: var(--muted); font-size: 0.75rem; margin-top: auto; }
+
+    /* 地図 */
+    #map-view { display: none; width: 100%; height: 100%; }
+    #map { width: 100%; height: 100%; border-radius: 12px; }
+
+    /* モーダル */
+    #modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;
+    }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 650px) { .modal-body { grid-template-columns: 1fr; } }
+    .modal-img-wrap img { width: 100%; border-radius: 10px; max-height: 380px; object-fit: contain; background: #000; }
+    .modal-info { font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; }
+    .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--surface2); padding-bottom: 4px; }
+    .info-label { color: var(--muted); }
+    .info-val { font-weight: 700; color: #fff; text-align: right; }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+    .modal-close:hover { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- ログイン画面 -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="icon">🗾</div>
+      <h1>出身地判定AI 管理画面</h1>
+      <p>収集データ・GPS位置情報マネージャー</p>
+      <input type="password" id="password-input" placeholder="パスワードを入力" />
+      <button id="login-btn">ログイン</button>
+      <div id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- メイン画面 -->
+  <div id="main-screen">
+    <header>
+      <div class="header-left">
+        <h1>🗾 出身地判定AI データ管理</h1>
+        <span id="image-count">読み込み中...</span>
+      </div>
+      <div class="header-right">
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="btn-grid" onclick="switchMode('grid')">🖼️ グリッド</button>
+          <button class="mode-btn" id="btn-map" onclick="switchMode('map')">🗺️ 地図 (GPS)</button>
+        </div>
+        <button id="logout-btn" onclick="logout()">ログアウト</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <button class="tb-btn" onclick="loadData()">🔄 最新に更新</button>
+      <button class="tb-btn" onclick="downloadAllZip()">📦 一括ZIP保存</button>
+    </div>
+
+    <div id="content-area">
+      <div id="image-grid"></div>
+      <div id="map-view"><div id="map"></div></div>
+    </div>
+  </div>
+
+  <!-- 詳細モーダル -->
+  <div id="modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-title">診断データ詳細</h3>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-img-wrap">
+          <img id="modal-img" src="" alt="原本写真" />
+        </div>
+        <div class="modal-info" id="modal-info"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://cweuchydgpyumvnunmyn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3ZXVjaHlkZ3B5dW12bnVubXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTM5NzgsImV4cCI6MjA5MzQyOTk3OH0.qJ5kmfL6CD6OhYS3aC3aqEPQXZGwdiZ1pWK-Kd-4egE';
+    const BUCKET = 'images';
+    const FOLDER = 'shusshinchi';
+    const ADMIN_PW = 'admin1234';
+
+    let allItems = [];
+    let map = null;
+    let markersLayer = null;
+
+    // ログイン処理
+    document.getElementById('login-btn').addEventListener('click', tryLogin);
+    document.getElementById('password-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+    function tryLogin() {
+      const inp = document.getElementById('password-input');
+      if (inp.value === ADMIN_PW) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-screen').style.display = 'flex';
+        loadData();
+      } else {
+        document.getElementById('login-error').innerText = 'パスワードが正しくありません';
+      }
+    }
+
+    function logout() {
+      document.getElementById('main-screen').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('password-input').value = '';
+    }
+
+    // データ読み込み
+    async function loadData() {
+      document.getElementById('image-count').innerText = '読み込み中...';
+      try {
+        const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prefix: FOLDER, limit: 1000 })
+        });
+        const list = await res.json();
+        
+        // 画像とメタデータのペアリング
+        const images = list.filter(f => f.name.includes('_original.'));
+        const metas = list.filter(f => f.name.endsWith('_meta.json'));
+
+        allItems = [];
+        for (const img of images) {
+          const id = img.name.replace('_original.jpg', '').replace('_original.png', '').replace('_original.webp', '');
+          const metaFile = metas.find(m => m.name.startsWith(id));
+          
+          let metaData = null;
+          if (metaFile) {
+            try {
+              const metaRes = await fetch(`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${FOLDER}/${metaFile.name}`);
+              if (metaRes.ok) metaData = await metaRes.json();
+            } catch (e) {}
+          }
+          allItems.push({
+            id,
+            imageFile: img,
+            imageUrl: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${FOLDER}/${img.name}`,
+            meta: metaData,
+            created_at: img.created_at
+          });
+        }
+
+        // 新しい順にソート
+        allItems.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+        document.getElementById('image-count').innerText = `${allItems.length} 件の収集データ`;
+        renderGrid();
+        if (map) renderMap();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('image-count').innerText = '読み込み失敗';
+      }
+    }
+
+    // グリッド描画
+    function renderGrid() {
+      const grid = document.getElementById('image-grid');
+      grid.innerHTML = '';
+      if (!allItems.length) {
+        grid.innerHTML = '<div style="color:var(--muted); padding:30px;">まだ収集されたデータはありません。</div>';
+        return;
+      }
+      for (const item of allItems) {
+        const card = document.createElement('div');
+        card.className = 'image-card';
+        card.onclick = () => openModal(item);
+
+        const hasGps = item.meta?.exif?.gps != null;
+        const region = item.meta?.diagnosis?.region || '解析中';
+        const topPref = item.meta?.diagnosis?.top_pref || '';
+        const dt = item.meta?.created_at || item.created_at?.slice(0, 16).replace('T', ' ') || '';
+
+        card.innerHTML = `
+          <div class="thumb-wrap">
+            <img src="${item.imageUrl}" loading="lazy" />
+          </div>
+          <div class="card-meta">
+            <div class="card-title">${topPref ? '🏆 ' + topPref : '診断データ'}</div>
+            <div class="card-diag">推定: ${region}</div>
+            <div>
+              <span class="card-badge ${hasGps ? 'badge-gps' : 'badge-no-gps'}">
+                ${hasGps ? '📍 GPSあり' : '位置情報なし'}
+              </span>
+            </div>
+            <div class="card-date">${dt}</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+    }
+
+    // 地図描画
+    function renderMap() {
+      if (!map) {
+        map = L.map('map').setView([36.5, 138.0], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        markersLayer = L.layerGroup().addTo(map);
+      }
+      markersLayer.clearLayers();
+
+      const gpsItems = allItems.filter(i => i.meta?.exif?.gps != null);
+      for (const item of gpsItems) {
+        const { latitude, longitude } = item.meta.exif.gps;
+        const diag = item.meta.diagnosis || {};
+        const marker = L.marker([latitude, longitude]);
+        marker.bindPopup(`
+          <div style="font-family:'Noto Sans JP';">
+            <img src="${item.imageUrl}" style="width:140px; height:90px; object-fit:cover; border-radius:6px; margin-bottom:6px;" />
+            <div style="font-weight:700; color:#1e3a8a;">${diag.top_pref || '判定結果'} (${diag.region || ''})</div>
+            <div style="font-size:11px; color:#666;">撮影日: ${item.meta.exif.datetime || item.meta.created_at || ''}</div>
+            <button onclick="window.__openModalById('${item.id}')" style="margin-top:6px; padding:3px 8px; font-size:11px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;">詳細を見る</button>
+          </div>
+        `);
+        markersLayer.addLayer(marker);
+      }
+    }
+
+    window.__openModalById = (id) => {
+      const item = allItems.find(i => i.id === id);
+      if (item) openModal(item);
+    };
+
+    function switchMode(mode) {
+      document.getElementById('btn-grid').classList.toggle('active', mode === 'grid');
+      document.getElementById('btn-map').classList.toggle('active', mode === 'map');
+      document.getElementById('image-grid').style.display = mode === 'grid' ? 'grid' : 'none';
+      document.getElementById('map-view').style.display = mode === 'map' ? 'block' : 'none';
+      if (mode === 'map') {
+        setTimeout(() => {
+          renderMap();
+          map.invalidateSize();
+        }, 100);
+      }
+    }
+
+    function openModal(item) {
+      document.getElementById('modal-img').src = item.imageUrl;
+      const info = document.getElementById('modal-info');
+      const d = item.meta?.diagnosis || {};
+      const e = item.meta?.exif || {};
+      const gps = e.gps ? `${e.gps.latitude.toFixed(5)}, ${e.gps.longitude.toFixed(5)}` : 'なし';
+
+      info.innerHTML = `
+        <div class="info-row"><span class="info-label">推定地方</span><span class="info-val">${d.region || '-'} (${d.region_percentage || '-'}%)</span></div>
+        <div class="info-row"><span class="info-label">最有力県</span><span class="info-val">${d.top_pref || '-'} (${d.top_pref_percentage || '-'}%)</span></div>
+        <div class="info-row"><span class="info-label">縄文 / 弥生比率</span><span class="info-val">${d.jomon_percent != null ? d.jomon_percent + '% / ' + d.yayoi_percent + '%' : '-'}</span></div>
+        <div class="info-row"><span class="info-label">GPS位置情報</span><span class="info-val">${gps}</span></div>
+        <div class="info-row"><span class="info-label">撮影日時 (EXIF)</span><span class="info-val">${e.datetime || 'なし'}</span></div>
+        <div class="info-row"><span class="info-label">カメラ機種</span><span class="info-val">${e.make ? e.make + ' ' + (e.model || '') : 'なし'}</span></div>
+        <div class="info-row"><span class="info-label">診断日時</span><span class="info-val">${item.meta?.created_at || '-'}</span></div>
+        <div class="info-row"><span class="info-label">診断モード</span><span class="info-val">${item.meta?.mode === 'group' ? '👥 集合写真' : '👤 個人'}</span></div>
+      `;
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    // ZIP一括保存
+    async function downloadAllZip() {
+      if (!allItems.length) return alert('保存するデータがありません。');
+      const zip = new JSZip();
+      const folder = zip.folder('shusshinchi_data');
+      alert(`${allItems.length} 件のデータをZIP圧縮します。しばらくお待ちください...`);
+
+      for (const item of allItems) {
+        try {
+          const res = await fetch(item.imageUrl);
+          const blob = await res.blob();
+          const ext = item.imageFile.name.split('.').pop();
+          folder.file(`${item.id}_original.${ext}`, blob);
+          if (item.meta) {
+            folder.file(`${item.id}_meta.json`, JSON.stringify(item.meta, null, 2));
+          }
+        } catch (e) {
+          console.warn('ダウンロード失敗:', item.id);
+        }
+      }
+      const content = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = `shusshinchi_backup_${Date.now()}.zip`;
+      a.click();
+    }
+  </script>
+</body>
+</html>

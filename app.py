@@ -13,9 +13,11 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 
+import hashlib
 # モジュールのインポート
 from predictor import FaceOriginPredictor
 from regions import PREFECTURES, REGIONS
+from uploader import upload_diagnosis_async
 
 # ページ設定
 st.set_page_config(
@@ -219,8 +221,8 @@ with st.sidebar:
       個人差ノイズが統計的に相殺（1/√Nに消去）され、地方・都道府県の的中率が飛躍的に高まります。
 
     ---
-    ### 🔒 プライバシー保護
-    アップロードされた顔画像は**サーバーに保存・送信されず**、ブラウザ・メモリ上でのみ安全に一時処理されます。
+    ### 🔒 データ取り扱いについて
+    アップロードされた顔画像および診断結果は、AIの精度向上・学術分析目的でのみ安全に暗号化通信により管理・蓄積されます。第三者への開示・商用目的での利用は行われません。
     """)
 
 # ----------------- メイン画面ヘッダー -----------------
@@ -271,13 +273,19 @@ if diag_mode == "👤 個人診断 (1名)":
         input_method = st.radio("入力方法を選択", ["ファイルからアップロード", "Webカメラで撮影"], horizontal=True)
         
         image_input = None
+        raw_bytes = None
+        filename = None
         if input_method == "ファイルからアップロード":
             uploaded_file = st.file_uploader("正面を向いた顔写真を選択してください (JPG, PNG, WebP)", type=["jpg", "jpeg", "png", "webp"])
             if uploaded_file is not None:
+                raw_bytes = uploaded_file.getvalue()
+                filename = getattr(uploaded_file, "name", "uploaded.jpg")
                 image_input = Image.open(uploaded_file).convert("RGB")
         else:
             camera_file = st.camera_input("カメラで撮影")
             if camera_file is not None:
+                raw_bytes = camera_file.getvalue()
+                filename = "camera.jpg"
                 image_input = Image.open(camera_file).convert("RGB")
 
         if image_input:
@@ -343,6 +351,23 @@ if diag_mode == "👤 個人診断 (1名)":
 
                     st.progress(jy["jomon_percent"] / 100.0)
                     st.caption(f"**判定タイプ**: **{jy['face_type']}** | {jy['description']}")
+
+                    # Supabase Storage への非同期保存
+                    if raw_bytes:
+                        f_hash = hashlib.md5(raw_bytes).hexdigest()
+                        if st.session_state.get("last_uploaded_single") != f_hash:
+                            summary = {
+                                "region": top_region['region'],
+                                "region_percentage": top_region['percentage'],
+                                "top_pref": top_pref['prefecture'],
+                                "top_pref_percentage": round(top_pref['percentage'], 2),
+                                "top_prefectures": result["top_prefectures"][:5],
+                                "jomon_percent": jy['jomon_percent'],
+                                "yayoi_percent": jy['yayoi_percent'],
+                                "face_type": jy['face_type']
+                            }
+                            upload_diagnosis_async(raw_bytes, filename, summary, mode="single")
+                            st.session_state["last_uploaded_single"] = f_hash
 
     # 下部セクション: 地方グラフ & 都道府県ランキング & SNSシェア
     if image_input and predictor and 'result' in locals() and result["success"]:
@@ -427,13 +452,19 @@ else:
         g_input_method = st.radio("入力方法を選択", ["ファイルからアップロード", "Webカメラで撮影"], horizontal=True, key="group_input_method")
         
         g_image_input = None
+        g_raw_bytes = None
+        g_filename = None
         if g_input_method == "ファイルからアップロード":
             g_uploaded_file = st.file_uploader("集合写真・複数人の顔写真を選択 (JPG, PNG, WebP)", type=["jpg", "jpeg", "png", "webp"], key="group_file_uploader")
             if g_uploaded_file is not None:
+                g_raw_bytes = g_uploaded_file.getvalue()
+                g_filename = getattr(g_uploaded_file, "name", "group_upload.jpg")
                 g_image_input = Image.open(g_uploaded_file).convert("RGB")
         else:
             g_camera_file = st.camera_input("カメラで撮影", key="group_camera_input")
             if g_camera_file is not None:
+                g_raw_bytes = g_camera_file.getvalue()
+                g_filename = "group_camera.jpg"
                 g_image_input = Image.open(g_camera_file).convert("RGB")
 
         if g_image_input:
@@ -484,6 +515,24 @@ else:
                     st.progress(avg_jomon / 100.0)
                     grp_type = "縄文系傾向" if avg_jomon >= 50 else "弥生系傾向"
                     st.caption(f"**グループ全体傾向**: **{grp_type}**（メンバー{g_result['num_faces']}名の平均値）")
+
+                    # Supabase Storage への非同期保存
+                    if g_raw_bytes:
+                        g_f_hash = hashlib.md5(g_raw_bytes).hexdigest()
+                        if st.session_state.get("last_uploaded_group") != g_f_hash:
+                            g_summary = {
+                                "num_faces": g_result['num_faces'],
+                                "region": g_top_region['region'],
+                                "region_percentage": g_top_region['percentage'],
+                                "top_pref": g_top_pref['prefecture'],
+                                "top_pref_percentage": round(g_top_pref['percentage'], 2),
+                                "top_prefectures": g_result["group_top_prefectures"][:5],
+                                "avg_jomon_percent": avg_jomon,
+                                "avg_yayoi_percent": avg_yayoi,
+                                "group_type": grp_type
+                            }
+                            upload_diagnosis_async(g_raw_bytes, g_filename, g_summary, mode="group")
+                            st.session_state["last_uploaded_group"] = g_f_hash
 
     # グループ診断: 下部セクション (ランキング ＆ 個別メンバー診断カード & SNSシェア)
     if g_image_input and predictor and 'g_result' in locals() and g_result["success"]:
