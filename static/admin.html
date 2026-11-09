@@ -2,125 +2,221 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>出身地判定AI - 管理画面 (画像・GPS・診断データマネージャー)</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗾</text></svg>" />
   <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     :root {
       --bg: #0f172a; --surface: #1e293b; --surface2: #334155; --border: #475569;
       --accent: #3b82f6; --accent2: #60a5fa; --text: #f8fafc; --muted: #94a3b8;
-      --danger: #ef4444; --success: #10b981; --radius: 14px;
+      --danger: #ef4444; --danger-hover: #dc2626; --success: #10b981; --radius: 12px;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
-    /* ログイン画面 */
+    /* ── ログイン画面 ── */
     #login-screen {
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
       background: radial-gradient(ellipse at 30% 40%, #1e40af33 0%, transparent 60%),
                   radial-gradient(ellipse at 70% 70%, #2563eb22 0%, transparent 60%), var(--bg);
     }
     .login-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
-      padding: 44px 36px; width: 100%; max-width: 380px; text-align: center;
+      padding: 36px 24px; width: 100%; max-width: 380px; text-align: center;
       box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
-    .login-card .icon { font-size: 3rem; margin-bottom: 12px; }
-    .login-card h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.35rem; margin-bottom: 6px; }
-    .login-card p { color: var(--muted); font-size: 0.85rem; margin-bottom: 24px; }
+    .login-card .icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .login-card h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.3rem; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); font-size: 0.85rem; margin-bottom: 22px; }
     .login-card input {
       width: 100%; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border);
       border-radius: 10px; color: var(--text); font-size: 1rem; outline: none; margin-bottom: 14px;
     }
     .login-card input:focus { border-color: var(--accent); }
     .login-card button {
-      width: 100%; padding: 12px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+      width: 100%; padding: 13px; background: linear-gradient(135deg, var(--accent), var(--accent2));
       border: none; border-radius: 10px; color: #fff; font-family: 'Zen Maru Gothic', sans-serif;
       font-size: 1rem; font-weight: 700; cursor: pointer;
     }
     #login-error { margin-top: 10px; color: var(--danger); font-size: 0.85rem; }
 
-    /* メイン画面 */
-    #main-screen { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
+    /* ── メインレイアウト ── */
+    #main-screen { display: none; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+    
+    /* ヘッダー (レスポンシブ) */
     header {
       background: var(--surface); border-bottom: 1px solid var(--border);
-      padding: 0 20px; height: 56px; display: flex; align-items: center;
-      justify-content: space-between; flex-shrink: 0;
+      padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; gap: 8px; z-index: 100;
     }
-    .header-left { display: flex; align-items: center; gap: 12px; }
-    .header-left h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.05rem; color: var(--accent2); }
-    #image-count { color: var(--muted); font-size: 0.82rem; }
-    .header-right { display: flex; align-items: center; gap: 10px; }
+    .header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .header-left h1 {
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: 1rem; color: var(--accent2);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #image-count { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+    .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .mode-toggle { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .mode-btn {
-      padding: 6px 14px; border: none; background: transparent; color: var(--muted);
-      font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+      padding: 6px 12px; border: none; background: transparent; color: var(--muted);
+      font-size: 0.8rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;
     }
     .mode-btn.active { background: var(--accent); color: #fff; font-weight: 700; }
     #logout-btn {
-      padding: 6px 12px; background: transparent; border: 1px solid var(--border);
-      border-radius: 8px; color: var(--muted); font-size: 0.8rem; cursor: pointer;
+      padding: 6px 10px; background: transparent; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted); font-size: 0.78rem; cursor: pointer; white-space: nowrap;
     }
-    #logout-btn:hover { border-color: var(--danger); color: var(--danger); }
 
+    /* ツールバー (レスポンシブ横スクロール/折り返し) */
     .toolbar {
-      padding: 8px 20px; display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; display: flex; align-items: center; gap: 8px;
       border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
     }
+    .toolbar::-webkit-scrollbar { display: none; }
     .tb-btn {
-      padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;
-      border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+      padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;
+      border: 1px solid var(--border); background: var(--surface2); color: var(--text); flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 4px;
     }
     .tb-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .tb-btn.danger { border-color: var(--danger); color: var(--danger); display: none; }
+    .tb-btn.danger:hover { background: var(--danger); color: #fff; }
+    .tb-btn.select-active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    /* コンテンツエリア */
-    #content-area { flex: 1; overflow-y: auto; padding: 20px; position: relative; }
+    /* ── コンテンツエリア ── */
+    #content-area { flex: 1; overflow-y: auto; padding: 12px; position: relative; }
+    
+    /* グリッド: スマホで2列、タブレットで3〜4列、PCで5列以上 */
     #image-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
     }
+    @media (min-width: 600px) {
+      #image-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+      #content-area { padding: 16px; }
+    }
+    @media (min-width: 900px) {
+      #image-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+      #content-area { padding: 20px; }
+    }
+
+    /* カードデザイン */
     .image-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.15s; display: flex; flex-direction: column;
+      overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.15s;
+      display: flex; flex-direction: column; position: relative;
     }
-    .image-card:hover { transform: translateY(-3px); border-color: var(--accent); }
-    .thumb-wrap { width: 100%; height: 160px; background: #000; overflow: hidden; position: relative; }
+    .image-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .image-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+    
+    /* サムネイル */
+    .thumb-wrap { width: 100%; aspect-ratio: 1; background: #000; overflow: hidden; position: relative; }
     .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
-    .card-meta { padding: 12px; font-size: 0.8rem; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-    .card-title { font-weight: 700; color: #fff; font-size: 0.88rem; }
-    .card-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; width: fit-content; }
+    
+    /* カード内クイック削除ボタン（スマホ・PC両対応） */
+    .card-del-btn {
+      position: absolute; top: 6px; right: 6px; width: 28px; height: 28px;
+      background: rgba(239, 68, 68, 0.88); border: none; border-radius: 6px;
+      color: #fff; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .card-del-btn:hover { background: var(--danger-hover); transform: scale(1.08); }
+
+    /* 選択チェックバッジ */
+    .card-checkbox {
+      position: absolute; top: 6px; left: 6px; width: 24px; height: 24px;
+      background: rgba(15, 23, 42, 0.7); border: 2px solid rgba(255,255,255,0.6);
+      border-radius: 6px; display: none; align-items: center; justify-content: center;
+      color: #fff; font-size: 0.8rem; z-index: 10;
+    }
+    body.select-mode .card-checkbox { display: flex; }
+    body.select-mode .card-del-btn { display: none; }
+    .image-card.selected .card-checkbox { background: var(--accent); border-color: var(--accent); }
+
+    /* カードテキスト */
+    .card-meta { padding: 10px; font-size: 0.78rem; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .card-title { font-weight: 700; color: #fff; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-diag { color: var(--accent2); font-weight: 700; font-size: 0.78rem; }
+    .card-badge { display: inline-block; padding: 2px 5px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; width: fit-content; }
     .badge-gps { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .badge-no-gps { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
-    .card-diag { color: var(--accent2); font-weight: 700; }
-    .card-date { color: var(--muted); font-size: 0.75rem; margin-top: auto; }
+    .card-date { color: var(--muted); font-size: 0.72rem; margin-top: auto; padding-top: 4px; }
 
-    /* 地図 */
-    #map-view { display: none; width: 100%; height: 100%; }
-    #map { width: 100%; height: 100%; border-radius: 12px; }
+    /* ── 地図 ── */
+    #map-view { display: none; width: 100%; height: 100%; position: relative; }
+    #map { width: 100%; height: 100%; border-radius: var(--radius); }
 
-    /* モーダル */
+    /* ── 詳細モーダル (完全レスポンシブ) ── */
     #modal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-      z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 12px;
     }
     .modal-box {
       background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-      max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;
+      max-width: 780px; width: 100%; max-height: 92vh; max-height: 92dvh;
+      overflow-y: auto; display: flex; flex-direction: column;
     }
-    .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 650px) { .modal-body { grid-template-columns: 1fr; } }
-    .modal-img-wrap img { width: 100%; border-radius: 10px; max-height: 380px; object-fit: contain; background: #000; }
-    .modal-info { font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; }
-    .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--surface2); padding-bottom: 4px; }
-    .info-label { color: var(--muted); }
-    .info-val { font-weight: 700; color: #fff; text-align: right; }
-    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
-    .modal-close:hover { color: #fff; }
+    .modal-header {
+      padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex;
+      justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+    .modal-header h3 { font-size: 1rem; color: #fff; }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.6rem; cursor: pointer; line-height: 1; }
+    .modal-body { padding: 16px; display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 650px) {
+      .modal-body { grid-template-columns: 1.1fr 1fr; gap: 20px; padding: 20px; }
+    }
+    .modal-img-wrap { width: 100%; max-height: 45vh; background: #000; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .modal-img-wrap img { max-width: 100%; max-height: 45vh; object-fit: contain; }
+    .modal-info { font-size: 0.82rem; display: flex; flex-direction: column; gap: 8px; }
+    .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--surface2); padding-bottom: 5px; gap: 8px; }
+    .info-label { color: var(--muted); flex-shrink: 0; }
+    .info-val { font-weight: 700; color: #fff; text-align: right; word-break: break-all; }
+    .modal-footer {
+      padding: 12px 18px; border-top: 1px solid var(--border); display: flex;
+      gap: 10px; justify-content: flex-end; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .modal-btn {
+      padding: 9px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .modal-btn.del { background: var(--danger); color: #fff; }
+    .modal-btn.del:hover { background: var(--danger-hover); }
+    .modal-btn.close { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+    /* ── 確認ダイアログ ── */
+    #confirm-modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      z-index: 2000; align-items: center; justify-content: center; padding: 16px;
+    }
+    .confirm-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; max-width: 360px; width: 100%; text-align: center;
+    }
+    .confirm-box h4 { font-size: 1.1rem; margin-bottom: 8px; }
+    .confirm-box p { color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .confirm-btns button { flex: 1; padding: 10px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; border: none; }
+    #btn-confirm-yes { background: var(--danger); color: #fff; }
+    #btn-confirm-no { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+    /* ── トースト通知 ── */
+    #toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 20px; font-size: 0.85rem; color: #fff; z-index: 3000;
+      transition: transform 0.25s ease, opacity 0.25s ease; opacity: 0; pointer-events: none;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #toast.success { border-color: var(--success); color: #34d399; }
+    #toast.error { border-color: var(--danger); color: #f87171; }
   </style>
 </head>
 <body>
@@ -142,20 +238,22 @@
     <header>
       <div class="header-left">
         <h1>🗾 出身地判定AI データ管理</h1>
-        <span id="image-count">読み込み中...</span>
+        <span id="image-count">...</span>
       </div>
       <div class="header-right">
         <div class="mode-toggle">
           <button class="mode-btn active" id="btn-grid" onclick="switchMode('grid')">🖼️ グリッド</button>
-          <button class="mode-btn" id="btn-map" onclick="switchMode('map')">🗺️ 地図 (GPS)</button>
+          <button class="mode-btn" id="btn-map" onclick="switchMode('map')">🗺️ 地図</button>
         </div>
-        <button id="logout-btn" onclick="logout()">ログアウト</button>
+        <button id="logout-btn" onclick="logout()">終了</button>
       </div>
     </header>
 
     <div class="toolbar">
-      <button class="tb-btn" onclick="loadData()">🔄 最新に更新</button>
-      <button class="tb-btn" onclick="downloadAllZip()">📦 一括ZIP保存</button>
+      <button class="tb-btn" onclick="loadData()">🔄 更新</button>
+      <button class="tb-btn" id="btn-toggle-select" onclick="toggleSelectMode()">☑️ 選択モード</button>
+      <button class="tb-btn danger" id="btn-del-selected" onclick="confirmDeleteSelected()">🗑️ 選択削除 (<span id="sel-count">0</span>)</button>
+      <button class="tb-btn" onclick="downloadAllZip()">📦 一括ZIP</button>
     </div>
 
     <div id="content-area">
@@ -177,8 +275,27 @@
         </div>
         <div class="modal-info" id="modal-info"></div>
       </div>
+      <div class="modal-footer">
+        <button class="modal-btn del" id="btn-modal-delete">🗑️ このデータを削除</button>
+        <button class="modal-btn close" onclick="closeModal()">閉じる</button>
+      </div>
     </div>
   </div>
+
+  <!-- 削除確認モーダル -->
+  <div id="confirm-modal">
+    <div class="confirm-box">
+      <h4 id="confirm-text">本当に削除しますか？</h4>
+      <p>Supabaseから原本画像とメタデータが完全に消去されます。</p>
+      <div class="confirm-btns">
+        <button id="btn-confirm-yes">削除する</button>
+        <button id="btn-confirm-no" onclick="closeConfirm()">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- トースト通知 -->
+  <div id="toast"></div>
 
   <script>
     const SUPABASE_URL = 'https://cweuchydgpyumvnunmyn.supabase.co';
@@ -188,8 +305,12 @@
     const ADMIN_PW = 'admin1234';
 
     let allItems = [];
+    let selectedSet = new Set();
+    let isSelectMode = false;
     let map = null;
     let markersLayer = null;
+    let currentModalItem = null;
+    let pendingDeleteAction = null;
 
     // ログイン処理
     document.getElementById('login-btn').addEventListener('click', tryLogin);
@@ -212,6 +333,13 @@
       document.getElementById('password-input').value = '';
     }
 
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.className = `show ${type}`;
+      setTimeout(() => { t.className = ''; }, 2600);
+    }
+
     // データ読み込み
     async function loadData() {
       document.getElementById('image-count').innerText = '読み込み中...';
@@ -227,13 +355,12 @@
         });
         const list = await res.json();
         
-        // 画像とメタデータのペアリング
         const images = list.filter(f => f.name.includes('_original.'));
         const metas = list.filter(f => f.name.endsWith('_meta.json'));
 
         allItems = [];
         for (const img of images) {
-          const id = img.name.replace('_original.jpg', '').replace('_original.png', '').replace('_original.webp', '');
+          const id = img.name.replace(/_original\.(jpg|png|webp|jpeg)$/i, '');
           const metaFile = metas.find(m => m.name.startsWith(id));
           
           let metaData = null;
@@ -252,9 +379,10 @@
           });
         }
 
-        // 新しい順にソート
         allItems.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-        document.getElementById('image-count').innerText = `${allItems.length} 件の収集データ`;
+        selectedSet.clear();
+        updateSelectUI();
+        document.getElementById('image-count').innerText = `${allItems.length} 件`;
         renderGrid();
         if (map) renderMap();
       } catch (err) {
@@ -268,29 +396,39 @@
       const grid = document.getElementById('image-grid');
       grid.innerHTML = '';
       if (!allItems.length) {
-        grid.innerHTML = '<div style="color:var(--muted); padding:30px;">まだ収集されたデータはありません。</div>';
+        grid.innerHTML = '<div style="color:var(--muted); padding:30px; grid-column:1/-1; text-align:center;">まだ収集されたデータはありません。</div>';
         return;
       }
       for (const item of allItems) {
         const card = document.createElement('div');
-        card.className = 'image-card';
-        card.onclick = () => openModal(item);
+        const isSelected = selectedSet.has(item.id);
+        card.className = `image-card ${isSelected ? 'selected' : ''}`;
+        
+        card.onclick = (e) => {
+          if (isSelectMode) {
+            toggleCardSelect(item.id);
+          } else {
+            openModal(item);
+          }
+        };
 
         const hasGps = item.meta?.exif?.gps != null;
         const region = item.meta?.diagnosis?.region || '解析中';
         const topPref = item.meta?.diagnosis?.top_pref || '';
-        const dt = item.meta?.created_at || item.created_at?.slice(0, 16).replace('T', ' ') || '';
+        const dt = (item.meta?.created_at || item.created_at?.slice(0, 16).replace('T', ' ') || '').slice(5);
 
         card.innerHTML = `
           <div class="thumb-wrap">
             <img src="${item.imageUrl}" loading="lazy" />
+            <button class="card-del-btn" title="削除" onclick="event.stopPropagation(); confirmDeleteSingle('${item.id}')">✕</button>
+            <div class="card-checkbox">${isSelected ? '✓' : ''}</div>
           </div>
           <div class="card-meta">
             <div class="card-title">${topPref ? '🏆 ' + topPref : '診断データ'}</div>
             <div class="card-diag">推定: ${region}</div>
             <div>
               <span class="card-badge ${hasGps ? 'badge-gps' : 'badge-no-gps'}">
-                ${hasGps ? '📍 GPSあり' : '位置情報なし'}
+                ${hasGps ? '📍 GPSあり' : '位置なし'}
               </span>
             </div>
             <div class="card-date">${dt}</div>
@@ -300,7 +438,99 @@
       }
     }
 
-    // 地図描画
+    // ── 削除機能 ──
+    async function executeDelete(itemIds) {
+      if (!itemIds || !itemIds.length) return;
+      const prefixes = [];
+      for (const id of itemIds) {
+        const item = allItems.find(i => i.id === id);
+        if (item) {
+          prefixes.push(`${FOLDER}/${item.imageFile.name}`);
+          prefixes.push(`${FOLDER}/${id}_meta.json`);
+        }
+      }
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prefixes })
+        });
+
+        if (res.ok) {
+          allItems = allItems.filter(i => !itemIds.includes(i.id));
+          itemIds.forEach(id => selectedSet.delete(id));
+          updateSelectUI();
+          renderGrid();
+          if (map) renderMap();
+          document.getElementById('image-count').innerText = `${allItems.length} 件`;
+          closeModal();
+          closeConfirm();
+          showToast(`${itemIds.length} 件のデータを削除しました`, 'success');
+        } else {
+          showToast('削除に失敗しました', 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('削除中に通信エラーが発生しました', 'error');
+      }
+    }
+
+    function confirmDeleteSingle(id) {
+      const item = allItems.find(i => i.id === id);
+      const name = item?.meta?.diagnosis?.top_pref || 'このデータ';
+      document.getElementById('confirm-text').innerText = `「${name}」を削除しますか？`;
+      pendingDeleteAction = () => executeDelete([id]);
+      document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function confirmDeleteSelected() {
+      if (!selectedSet.size) return;
+      document.getElementById('confirm-text').innerText = `選択した ${selectedSet.size} 件をまとめて削除しますか？`;
+      pendingDeleteAction = () => executeDelete([...selectedSet]);
+      document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    document.getElementById('btn-confirm-yes').addEventListener('click', () => {
+      if (pendingDeleteAction) pendingDeleteAction();
+    });
+
+    function closeConfirm() {
+      document.getElementById('confirm-modal').style.display = 'none';
+      pendingDeleteAction = null;
+    }
+
+    // ── 選択モード ──
+    function toggleSelectMode() {
+      isSelectMode = !isSelectMode;
+      document.body.classList.toggle('select-mode', isSelectMode);
+      document.getElementById('btn-toggle-select').classList.toggle('select-active', isSelectMode);
+      if (!isSelectMode) selectedSet.clear();
+      updateSelectUI();
+      renderGrid();
+    }
+
+    function toggleCardSelect(id) {
+      if (selectedSet.has(id)) {
+        selectedSet.delete(id);
+      } else {
+        selectedSet.add(id);
+      }
+      updateSelectUI();
+      renderGrid();
+    }
+
+    function updateSelectUI() {
+      const count = selectedSet.size;
+      document.getElementById('sel-count').innerText = count;
+      document.getElementById('btn-del-selected').style.display = count > 0 ? 'inline-flex' : 'none';
+    }
+
+    // ── 地図描画 ──
     function renderMap() {
       if (!map) {
         map = L.map('map').setView([36.5, 138.0], 5);
@@ -318,10 +548,10 @@
         const marker = L.marker([latitude, longitude]);
         marker.bindPopup(`
           <div style="font-family:'Noto Sans JP';">
-            <img src="${item.imageUrl}" style="width:140px; height:90px; object-fit:cover; border-radius:6px; margin-bottom:6px;" />
-            <div style="font-weight:700; color:#1e3a8a;">${diag.top_pref || '判定結果'} (${diag.region || ''})</div>
-            <div style="font-size:11px; color:#666;">撮影日: ${item.meta.exif.datetime || item.meta.created_at || ''}</div>
-            <button onclick="window.__openModalById('${item.id}')" style="margin-top:6px; padding:3px 8px; font-size:11px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;">詳細を見る</button>
+            <img src="${item.imageUrl}" style="width:130px; height:85px; object-fit:cover; border-radius:6px; margin-bottom:6px;" />
+            <div style="font-weight:700; color:#1e3a8a; font-size:12px;">${diag.top_pref || '判定結果'} (${diag.region || ''})</div>
+            <div style="font-size:10px; color:#666; margin-bottom:6px;">撮影日: ${item.meta.exif.datetime || item.meta.created_at || ''}</div>
+            <button onclick="window.__openModalById('${item.id}')" style="padding:4px 8px; font-size:11px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;">詳細を見る</button>
           </div>
         `);
         markersLayer.addLayer(marker);
@@ -342,11 +572,13 @@
         setTimeout(() => {
           renderMap();
           map.invalidateSize();
-        }, 100);
+        }, 120);
       }
     }
 
+    // ── 詳細モーダル ──
     function openModal(item) {
+      currentModalItem = item;
       document.getElementById('modal-img').src = item.imageUrl;
       const info = document.getElementById('modal-info');
       const d = item.meta?.diagnosis || {};
@@ -363,19 +595,25 @@
         <div class="info-row"><span class="info-label">診断日時</span><span class="info-val">${item.meta?.created_at || '-'}</span></div>
         <div class="info-row"><span class="info-label">診断モード</span><span class="info-val">${item.meta?.mode === 'group' ? '👥 集合写真' : '👤 個人'}</span></div>
       `;
+
+      document.getElementById('btn-modal-delete').onclick = () => {
+        confirmDeleteSingle(item.id);
+      };
+
       document.getElementById('modal').style.display = 'flex';
     }
 
     function closeModal() {
       document.getElementById('modal').style.display = 'none';
+      currentModalItem = null;
     }
 
-    // ZIP一括保存
+    // ── ZIP一括保存 ──
     async function downloadAllZip() {
       if (!allItems.length) return alert('保存するデータがありません。');
       const zip = new JSZip();
       const folder = zip.folder('shusshinchi_data');
-      alert(`${allItems.length} 件のデータをZIP圧縮します。しばらくお待ちください...`);
+      showToast(`${allItems.length} 件のデータをZIP圧縮中...`, 'success');
 
       for (const item of allItems) {
         try {
@@ -395,6 +633,7 @@
       a.href = URL.createObjectURL(content);
       a.download = `shusshinchi_backup_${Date.now()}.zip`;
       a.click();
+      showToast('ZIPダウンロード完了', 'success');
     }
   </script>
 </body>

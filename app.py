@@ -38,12 +38,12 @@ if query_params.get("page") == "admin" or query_params.get("admin") in ["1", "tr
         import streamlit.components.v1 as components
         st.markdown("""
         <style>
-            header[data-testid="stHeader"] { display: none !important; }
+            header[data-testid="stHeader"], footer, #MainMenu { display: none !important; }
             .block-container { padding: 0 !important; max-width: 100% !important; }
-            iframe { width: 100% !important; min-height: 98vh !important; border: none !important; }
+            iframe { width: 100% !important; min-height: 98vh !important; height: 100% !important; border: none !important; }
         </style>
         """, unsafe_allow_html=True)
-        components.html(admin_code, height=950, scrolling=True)
+        components.html(admin_code, height=980, scrolling=True)
         st.stop()
 
 # カスタムCSS（洗練されたモダン＆和風テイスト）
