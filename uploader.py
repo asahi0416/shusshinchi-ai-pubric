@@ -13,6 +13,8 @@ import time
 import uuid
 import urllib.request
 import io
+import math
+import hashlib
 from typing import Dict, Any, Optional, Tuple
 from PIL import Image, ExifTags
 
@@ -30,12 +32,16 @@ STORAGE_PREFIX = "shusshinchi"
 
 
 def _dms_to_decimal(dms: Any, ref: str) -> Optional[float]:
-    """度分秒（DMS）タプルを十進角（Decimal Degrees）に変換"""
+    """度分秒（DMS）タプルを十進角（Decimal Degrees）に変換（NaN/Infを厳格に除外）"""
     try:
+        if not dms or len(dms) < 3:
+            return None
         degrees = float(dms[0])
         minutes = float(dms[1]) / 60.0
         seconds = float(dms[2]) / 3600.0
         val = degrees + minutes + seconds
+        if not math.isfinite(val):
+            return None
         if ref in ["S", "W"]:
             val = -val
         return round(val, 6)
@@ -89,11 +95,21 @@ def extract_exif_metadata(image_bytes: bytes) -> Dict[str, Any]:
                         dec_lat = _dms_to_decimal(lat, lat_ref)
                         dec_lng = _dms_to_decimal(lng, lng_ref)
                         if dec_lat is not None and dec_lng is not None:
-                            meta["gps"] = {
-                                "latitude": dec_lat,
-                                "longitude": dec_lng,
-                                "altitude": float(alt) if alt is not None else None
-                            }
+                            if math.isfinite(dec_lat) and math.isfinite(dec_lng):
+                                if -90.0 <= dec_lat <= 90.0 and -180.0 <= dec_lng <= 180.0:
+                                    alt_val = None
+                                    if alt is not None:
+                                        try:
+                                            f_alt = float(alt)
+                                            if math.isfinite(f_alt):
+                                                alt_val = round(f_alt, 2)
+                                        except Exception:
+                                            pass
+                                    meta["gps"] = {
+                                        "latitude": dec_lat,
+                                        "longitude": dec_lng,
+                                        "altitude": alt_val
+                                    }
     except Exception as e:
         logger.warning(f"EXIF抽出中に例外が発生しました（無視して続行）: {e}")
 
@@ -121,9 +137,9 @@ def _upload_bytes_to_supabase(path: str, data: bytes, content_type: str = "image
 def _worker_upload(image_bytes: bytes, original_filename: str, result_summary: dict, mode: str):
     """バックグラウンドスレッドで実行されるアップロードワーカー"""
     try:
-        timestamp_str = time.strftime("%Y%m%d_%H%M%S")
-        rand_id = uuid.uuid4().hex[:8]
-        base_name = f"{timestamp_str}_{rand_id}"
+        # 画像バイナリのMD5ハッシュを一意キーとし、同一画像の増殖・多重保存を100%防止
+        img_hash = hashlib.md5(image_bytes).hexdigest()
+        base_name = f"img_{img_hash}"
 
         # 1. EXIF メタデータを抽出
         exif_info = extract_exif_metadata(image_bytes)
@@ -156,7 +172,8 @@ def _worker_upload(image_bytes: bytes, original_filename: str, result_summary: d
             "exif": exif_info,
             "diagnosis": result_summary
         }
-        meta_bytes = json.dumps(meta_payload, ensure_ascii=False, indent=2).encode("utf-8")
+        # allow_nan=False で不正なNaN/Infinityを完全に防止
+        meta_bytes = json.dumps(meta_payload, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8")
         meta_success = _upload_bytes_to_supabase(meta_path, meta_bytes, content_type="application/json")
 
         if img_success and meta_success:

@@ -367,8 +367,15 @@
           if (metaFile) {
             try {
               const metaRes = await fetch(`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${FOLDER}/${metaFile.name}`);
-              if (metaRes.ok) metaData = await metaRes.json();
-            } catch (e) {}
+              if (metaRes.ok) {
+                const text = await metaRes.text();
+                // NaN や Infinity を安全に null へ自動正規化（SyntaxError防止）
+                const safeText = text.replace(/:\s*NaN\b/gi, ': null').replace(/:\s*Infinity\b/gi, ': null');
+                metaData = JSON.parse(safeText);
+              }
+            } catch (e) {
+              console.warn('Meta parse fallback:', metaFile.name, e);
+            }
           }
           allItems.push({
             id,
@@ -541,7 +548,10 @@
       }
       markersLayer.clearLayers();
 
-      const gpsItems = allItems.filter(i => i.meta?.exif?.gps != null);
+      const gpsItems = allItems.filter(i => {
+        const g = i.meta?.exif?.gps;
+        return g && typeof g.latitude === 'number' && !isNaN(g.latitude) && typeof g.longitude === 'number' && !isNaN(g.longitude);
+      });
       for (const item of gpsItems) {
         const { latitude, longitude } = item.meta.exif.gps;
         const diag = item.meta.diagnosis || {};
